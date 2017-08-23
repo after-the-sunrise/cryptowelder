@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<configuration>
+
+    <appender name="STDO" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>[%d{yyyy-MM-dd HH:mm:ss.SSS}][%-5level][%thread][%logger{0}] %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <encoder>
+            <pattern>[%d{yyyy-MM-dd HH:mm:ss.SSS}][%-5level][%thread][%logger{0}] %msg%n</pattern>
+        </encoder>
+        <file>logs/cryptowelder-app.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>logs/cryptowelder-app_%d{yyyy-MM-dd}.tar.gz</fileNamePattern>
+            <maxHistory>8</maxHistory>
+        </rollingPolicy>
+    </appender>
+
+    <appender name="HTTP" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <encoder>
+            <pattern>[%d{yyyy-MM-dd HH:mm:ss.SSS}] %msg%n</pattern>
+        </encoder>
+        <file>logs/cryptowelder-http.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>logs/cryptowelder-http_%d{yyyy-MM-dd}.tar.gz</fileNamePattern>
+            <maxHistory>8</maxHistory>
+        </rollingPolicy>
+    </appender>
+
+    <appender name="PUBNUB" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <encoder>
+            <pattern>[%d{yyyy-MM-dd HH:mm:ss.SSS}] %msg%n</pattern>
+        </encoder>
+        <file>logs/cryptowelder-pubnub.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>logs/cryptowelder-pubnub_%d{yyyy-MM-dd}.tar.gz</fileNamePattern>
+            <maxHistory>8</maxHistory>
+        </rollingPolicy>
+    </appender>
+
+    <root level="INFO">
+        <appender-ref ref="STDO"/>
+        <appender-ref ref="FILE"/>
+    </root>
+
+    <logger level="DEBUG" name="com.after_sunrise.cryptocurrency"/>
+
+    <logger level="TRACE" additivity="false" name="com.after_sunrise.cryptocurrency.bitflyer4j.core.Loggers$HttpLogger">
+        <appender-ref ref="HTTP"/>
+    </logger>
+
+    <logger level="TRACE" additivity="false"
+            name="com.after_sunrise.cryptocurrency.bitflyer4j.core.Loggers$PubNubLogger">
+        <appender-ref ref="PUBNUB"/>
+    </logger>
+
+</configuration>

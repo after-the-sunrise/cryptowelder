@@ -1,0 +1,14 @@
+language: java
+
+jdk:
+    - oraclejdk8
+
+notifications:
+    email:
+        - scm@after-sunrise.com
+
+install:
+  - gradle assemble -x signArchives
+
+after_success:
+  - gradle jacocoTestReport coveralls

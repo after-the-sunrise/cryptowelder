@@ -1,0 +1,23 @@
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE (Eclipse)
+.classpath
+.project
+.settings
+build
+
+# IDE (Intellij IDEA)
+*.iml
+.idea
+out
+
+# Gradle
+.gradle
+build
+
+# Runtime
+logs
+etc/h2/data
+etc/h2/logs
