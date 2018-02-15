@@ -39,7 +39,7 @@ class CryptowelderContext:
         logger.addHandler(self.__rotate_handler)
         return logger
 
-    def _request(self, callable, *, interval=1):
+    def _request(self, method, *, interval=1):
 
         result = None
 
@@ -47,7 +47,7 @@ class CryptowelderContext:
 
             try:
 
-                with callable() as r:
+                with method() as r:
 
                     if r.status_code >= 500:  # Server Error
 
