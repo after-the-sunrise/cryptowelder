@@ -1,11 +1,11 @@
 from logging import Formatter, StreamHandler, DEBUG, INFO, getLogger
 from logging.handlers import TimedRotatingFileHandler, BufferingHandler
+from time import sleep
 
 from requests import get, post
 from sqlalchemy import create_engine, Column, VARCHAR, TIMESTAMP, DECIMAL
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
-from time import sleep
 
 
 class CryptowelderContext:
