@@ -1,0 +1,4 @@
+pg8000==1.11.0
+requests==2.18.4
+PyJWT==1.5.3
+SQLAlchemy==1.2.2

@@ -1,14 +1,18 @@
-language: java
+language: python
 
-jdk:
-    - oraclejdk8
+python:
+    - "3.6.2"
 
 notifications:
     email:
         - scm@after-sunrise.com
 
 install:
-  - gradle assemble -x signArchives
+    - pip install -r requirements.txt
+    - pip install -r requirements_test.txt
+
+script:
+    - coverage run --source=cryptowelder cryptowelder_test.py
 
 after_success:
-  - gradle jacocoTestReport coveralls
+    - coveralls

@@ -13,11 +13,6 @@ build
 .idea
 out
 
-# Gradle
-.gradle
-build
-
 # Runtime
 logs
-etc/h2/data
-etc/h2/logs
+.python-version
