@@ -26,7 +26,7 @@ class CryptowelderContext:
         self.__read_only = read_only
 
         # Configuration
-        self.__config = self._create_config(config)
+        self.__config = self._create_config([config])
 
         # Logging
         logger = self.get_property(self.SECTION, 'log_path', 'logs/cryptowelder.log')
@@ -52,12 +52,15 @@ class CryptowelderContext:
         self.__session = scoped_session(sessionmaker(bind=self.__engine))
         self.__logger.info('Database : %s (read_only=%s)', database, read_only)
 
-    def _create_config(self, config_path):
+    def _create_config(self, paths):
 
         config = ConfigParser()
 
-        if config_path is not None:
-            config.read(path.expanduser(config_path), 'UTF-8')
+        expanded = [path.expanduser(p) for p in paths if p is not None]
+
+        exists = [p for p in expanded if path.exists(p)]
+
+        config.read(exists, 'UTF-8')
 
         return config
 

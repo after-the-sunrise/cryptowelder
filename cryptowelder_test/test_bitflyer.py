@@ -13,6 +13,12 @@ class TestBitflyerWelder(TestCase):
 
         self.target = BitflyerWelder(self.context)
 
+    def test_run(self):
+        self.context.is_closed = mock.MagicMock(return_value=True)
+        self.target.run()
+        self.target._join()
+        self.context.is_closed.assert_called_once()
+
     def test__fetch_special_quotation(self):
         self.context.requests_get = mock.MagicMock()
         url = "https://api.bitflyer.jp/v1/getboardstate?product_code=BTCJPY14APR2017"
@@ -59,9 +65,10 @@ class TestBitflyerWelder(TestCase):
         self.assertIsNone(self.target._parse_expiry('BTCJPY14APR2017*'))
         self.assertIsNone(self.target._parse_expiry('BTCJPY14APR'))
         self.assertIsNone(self.target._parse_expiry('14APR2017'))
-        self.assertIsNone(self.target._parse_expiry('BTCJPY__APR2017'))
-        self.assertIsNone(self.target._parse_expiry('BTCJPY14___2017'))
-        self.assertIsNone(self.target._parse_expiry('BTCJPY14APR____'))
+        self.assertIsNone(self.target._parse_expiry('BTCJPY**APR2017'))
+        self.assertIsNone(self.target._parse_expiry('BTCJPY14***2017'))
+        self.assertIsNone(self.target._parse_expiry('BTCJPY14ABC2017'))
+        self.assertIsNone(self.target._parse_expiry('BTCJPY14APR****'))
         self.assertIsNone(self.target._parse_expiry(''))
         self.assertIsNone(self.target._parse_expiry(None))
 

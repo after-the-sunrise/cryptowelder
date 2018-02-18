@@ -38,6 +38,10 @@ class BitflyerWelder:
 
         self.__thread.start()
 
+    def _join(self):
+
+        self.__thread.join()
+
     def _loop(self):
 
         self.__logger.info('Endpoint=[%s] Interval=[%s] Key=[%s]', self.__endpoint, self.__interval, self.__apikey)

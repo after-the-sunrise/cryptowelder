@@ -168,7 +168,7 @@ class TestCryptowelderContext(TestCase):
 
         # Read-only
         self.target._is_read_only = lambda: True
-        results = self.target.save_tickers(None)
+        results = self.target.save_tickers([t1])
         self.assertEqual(len(results), 0)
 
     def test_save_balances(self):
@@ -213,7 +213,7 @@ class TestCryptowelderContext(TestCase):
 
         # Read-only
         self.target._is_read_only = lambda: True
-        results = self.target.save_balances(None)
+        results = self.target.save_balances([b1])
         self.assertEqual(len(results), 0)
 
     def test_save_positions(self):
@@ -260,7 +260,7 @@ class TestCryptowelderContext(TestCase):
 
         # Read-only
         self.target._is_read_only = lambda: True
-        results = self.target.save_positions(None)
+        results = self.target.save_positions([p1])
         self.assertEqual(len(results), 0)
 
     def test_save_transactions(self):
@@ -325,7 +325,7 @@ class TestCryptowelderContext(TestCase):
 
         # Read-only
         self.target._is_read_only = lambda: True
-        results = self.target.save_transactions(None)
+        results = self.target.save_transactions([t1])
         self.assertEqual(len(results), 0)
 
 
