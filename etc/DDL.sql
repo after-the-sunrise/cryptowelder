@@ -5,12 +5,12 @@ DROP TABLE IF EXISTS t_ticker;
 
 CREATE TABLE t_ticker
 (
-  tk_site VARCHAR(36) NOT NULL,
-  tk_code VARCHAR(36) NOT NULL,
+  tk_site VARCHAR(16) NOT NULL,
+  tk_code VARCHAR(32) NOT NULL,
   tk_time TIMESTAMP   NOT NULL,
-  tk_ask  DECIMAL(20, 8),
-  tk_bid  DECIMAL(20, 8),
-  tk_ltp  DECIMAL(20, 8)
+  tk_ask  DECIMAL(32, 16),
+  tk_bid  DECIMAL(32, 16),
+  tk_ltp  DECIMAL(32, 16)
 );
 
 ALTER TABLE t_ticker
@@ -35,11 +35,11 @@ DROP TABLE IF EXISTS t_balance;
 
 CREATE TABLE t_balance
 (
-  bc_site VARCHAR(36) NOT NULL,
-  bc_acct VARCHAR(36) NOT NULL,
-  bc_unit VARCHAR(36) NOT NULL,
+  bc_site VARCHAR(16) NOT NULL,
+  bc_acct VARCHAR(16) NOT NULL,
+  bc_unit VARCHAR(16) NOT NULL,
   bc_time TIMESTAMP   NOT NULL,
-  bc_amnt DECIMAL(20, 8)
+  bc_amnt DECIMAL(32, 16)
 );
 
 ALTER TABLE t_balance
@@ -65,11 +65,11 @@ DROP TABLE IF EXISTS t_position;
 
 CREATE TABLE t_position
 (
-  ps_site VARCHAR(36) NOT NULL,
-  ps_code VARCHAR(36) NOT NULL,
+  ps_site VARCHAR(16) NOT NULL,
+  ps_code VARCHAR(32) NOT NULL,
   ps_time TIMESTAMP   NOT NULL,
-  ps_inst DECIMAL(20, 8),
-  ps_fund DECIMAL(20, 8)
+  ps_inst DECIMAL(32, 16),
+  ps_fund DECIMAL(32, 16)
 );
 
 ALTER TABLE t_position
@@ -94,13 +94,13 @@ DROP TABLE IF EXISTS t_transaction;
 
 CREATE TABLE t_transaction
 (
-  tx_site VARCHAR(36) NOT NULL,
-  tx_code VARCHAR(36) NOT NULL,
-  tx_type VARCHAR(36) NOT NULL,
-  tx_id   VARCHAR(36) NOT NULL,
+  tx_site VARCHAR(16) NOT NULL,
+  tx_code VARCHAR(32) NOT NULL,
+  tx_type VARCHAR(16) NOT NULL,
+  tx_id   VARCHAR(64) NOT NULL,
   tx_time TIMESTAMP   NOT NULL,
-  tx_inst DECIMAL(20, 8),
-  tx_fund DECIMAL(20, 8)
+  tx_inst DECIMAL(32, 16),
+  tx_fund DECIMAL(32, 16)
 );
 
 ALTER TABLE t_transaction
