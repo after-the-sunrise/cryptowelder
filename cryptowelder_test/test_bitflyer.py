@@ -308,8 +308,8 @@ class TestBitflyerWelder(TestCase):
 
         self.target._process_transaction('FOO_BAR')
         self.target._query_private.assert_has_calls([
-            call('/v1/me/getexecutions?count=500&product_code=FOO_BAR'),
-            call('/v1/me/getexecutions?count=500&product_code=FOO_BAR&before=37232'),
+            call('/v1/me/getexecutions?count=100&product_code=FOO_BAR'),
+            call('/v1/me/getexecutions?count=100&product_code=FOO_BAR&before=37232'),
         ])
 
         calls = self.context.save_transactions.call_args_list

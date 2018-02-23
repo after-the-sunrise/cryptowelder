@@ -249,7 +249,7 @@ class BitflyerWelder:
 
             while True:
 
-                path = '/v1/me/getexecutions?count=500&product_code=%s' % code
+                path = '/v1/me/getexecutions?count=100&product_code=%s' % code
 
                 if sequence is not None:
                     path = path + '&before=%s' % sequence
