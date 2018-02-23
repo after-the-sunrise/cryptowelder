@@ -8,7 +8,8 @@ from time import sleep
 
 from pytz import utc
 
-from cryptowelder.context import CryptowelderContext, Ticker, Position
+from cryptowelder.context import CryptowelderContext, Ticker, Position, Balance, AccountType, UnitType, Transaction, \
+    TransactionType
 
 
 class BitflyerWelder:
@@ -45,7 +46,8 @@ class BitflyerWelder:
 
             threads = [
                 Thread(target=self._process_markets),
-                Thread(target=self._process_balance),
+                Thread(target=self._process_cash),
+                Thread(target=self._process_margin),
             ]
 
             for t in threads:
@@ -63,14 +65,28 @@ class BitflyerWelder:
             # [{"product_code": "BTCJPYddMMMyyyy", "alias": "BTCJPY_MAT1WK"}, ...]
             markets = self.__context.requests_get(self.__endpoint + '/v1/markets')
 
+            threads = []
+
+            codes = []
+
             for market in markets if markets is not None else []:
                 code = market.get('product_code', None)
 
-                self._process_ticker(code)
+                codes.append(code)
 
-                self._process_position(code)
+                threads.append(Thread(target=self._process_ticker, args=(code,)))
 
-                self._process_transaction(code)
+                threads.append(Thread(target=self._process_position, args=(code,)))
+
+                threads.append(Thread(target=self._process_transaction, args=(code,)))
+
+            for t in threads:
+                t.start()
+
+            for t in threads:
+                t.join()
+
+            self.__logger.debug('Markets : %s', codes)
 
         except Exception as e:
 
@@ -78,30 +94,38 @@ class BitflyerWelder:
 
     def _process_ticker(self, code):
 
-        special_quotation = self._fetch_special_quotation(code)
+        try:
 
-        ticker = Ticker()
-        ticker.tk_site = self._ID
-        ticker.tk_code = code
+            special_quotation = self._fetch_special_quotation(code)
 
-        if special_quotation is not None:
+            ticker = Ticker()
+            ticker.tk_site = self._ID
+            ticker.tk_code = code
 
-            ticker.tk_time = self._parse_expiry(code)
-            ticker.tk_ask = None
-            ticker.tk_bid = None
-            ticker.tk_ltp = special_quotation
+            if special_quotation is not None:
 
-        else:
+                ticker.tk_time = self._parse_expiry(code)
+                ticker.tk_ask = None
+                ticker.tk_bid = None
+                ticker.tk_ltp = special_quotation
 
-            json = self.__context.requests_get(self.__endpoint + '/v1/ticker?product_code=' + code)
-            json = json if json is not None else {}
+            else:
 
-            ticker.tk_time = self._parse_timestamp(json.get('timestamp', None))
-            ticker.tk_ask = json.get('best_ask', None)
-            ticker.tk_bid = json.get('best_bid', None)
-            ticker.tk_ltp = json.get('ltp', None)
+                json = self.__context.requests_get(self.__endpoint + '/v1/ticker?product_code=' + code)
+                json = json if json is not None else {}
 
-        self.__context.save_tickers([ticker])
+                ticker.tk_time = self._parse_timestamp(json.get('timestamp', None))
+                ticker.tk_ask = json.get('best_ask', None)
+                ticker.tk_bid = json.get('best_bid', None)
+                ticker.tk_ltp = json.get('ltp', None)
+
+            self.__context.save_tickers([ticker])
+
+            self.__logger.debug('Ticker : %s - %s', code, ticker)
+
+        except Exception as e:
+
+            self.__logger.warn('Ticker Failure - %s : %s - %s', code, type(e), e.args)
 
     def __is_futures(self, code):
         return code is not None and self._FUTURES.match(code)
@@ -175,41 +199,134 @@ class BitflyerWelder:
 
     def _process_position(self, code):
 
-        if 'FX_BTC_JPY' != code and not self.__is_futures(code):
-            return
+        try:
 
-        positions = self._query_private('/v1/me/getpositions?product_code=' + code)
+            if 'FX_BTC_JPY' != code and not self.__is_futures(code):
+                return
 
-        now = self.__context.get_now()
-        amount_inst = None
-        amount_fund = None
+            positions = self._query_private('/v1/me/getpositions?product_code=' + code)
 
-        for position in positions if positions is not None else []:
-            # Instrument Position
-            sign = self._SIDE.get(position.get('side', None), self._ZERO)
-            inst = position.get('size', self._ZERO) * sign
-            amount_inst = (amount_inst if amount_inst is not None else self._ZERO) + inst
+            now = self.__context.get_now()
+            amount_inst = None
+            amount_fund = None
 
-            # P&L
-            pnl = position.get('pnl', self._ZERO)
-            swp = position.get('swap_point_accumulate', self._ZERO)
-            cmm = position.get('commission', self._ZERO)
-            amount_fund = (amount_fund if amount_fund is not None else self._ZERO) + pnl - swp - cmm
+            for position in positions if positions is not None else []:
+                # Instrument Position
+                sign = self._SIDE.get(position.get('side', None), self._ZERO)
+                inst = position.get('size', self._ZERO) * sign
+                amount_inst = (amount_inst if amount_inst is not None else self._ZERO) + inst
 
-        position = Position()
-        position.ps_site = self._ID
-        position.ps_code = code
-        position.ps_time = now
-        position.ps_inst = amount_inst
-        position.ps_fund = amount_fund
+                # P&L
+                pnl = position.get('pnl', self._ZERO)
+                swp = position.get('swap_point_accumulate', self._ZERO)
+                cmm = position.get('commission', self._ZERO)
+                amount_fund = (amount_fund if amount_fund is not None else self._ZERO) + pnl - swp - cmm
 
-        self.__context.save_positions([position])
+            position = Position()
+            position.ps_site = self._ID
+            position.ps_code = code
+            position.ps_time = now
+            position.ps_inst = amount_inst
+            position.ps_fund = amount_fund
+
+            self.__context.save_positions([position])
+
+            self.__logger.debug('Position : %s - %s', code, position)
+
+        except Exception as e:
+
+            self.__logger.warn('Position Failure - %s : %s - %s', code, type(e), e.args)
 
     def _process_transaction(self, code):
-        pass  # TODO
 
-    def _process_balance(self):
-        pass  # TODO
+        try:
+
+            sequence = None
+
+            while True:
+
+                path = '/v1/me/getexecutions?count=500&product_code=%s' % code
+
+                if sequence is not None:
+                    path = path + '&before=%s' % sequence
+
+                executions = self._query_private(path)
+
+                values = []
+
+                for execution in executions if executions is not None else []:
+                    exec_id = execution.get('id', None)
+                    exec_ts = execution.get('exec_date', None)
+                    exec_sd = execution.get('side', None)
+                    exec_in = execution.get('size', None)
+                    exec_px = execution.get('price', None)
+                    exec_cm = execution.get('commission', self._ZERO)
+
+                    sequence = exec_id if sequence is None else min(exec_id, sequence)
+
+                    value = Transaction()
+                    value.tx_site = self._ID
+                    value.tx_code = code
+                    value.tx_type = TransactionType.TRADE
+                    value.tx_id = exec_id
+                    value.tx_time = self._parse_timestamp(exec_ts)
+                    value.tx_inst = (exec_in * self._SIDE[exec_sd]) - exec_cm
+                    value.tx_fund = (exec_in * self._SIDE[exec_sd]) * exec_px * -1
+
+                    values.append(value)
+
+                self.__logger.debug('Transactions : %s - fetched=[%s] sequence=[%s]', code, len(values), sequence)
+
+                results = self.__context.save_transactions(values)
+
+                if len(results) <= 0:
+                    break
+
+        except Exception as e:
+
+            self.__logger.warn('Transaction Failure - %s : %s - %s', code, type(e), e.args)
+
+    def _process_cash(self):
+        self._process_balance('/v1/me/getbalance', AccountType.CASH)
+
+    def _process_margin(self):
+        self._process_balance('/v1/me/getcollateralaccounts', AccountType.MARGIN)
+
+    def _process_balance(self, path, account_type):
+
+        try:
+
+            now = self.__context.get_now()
+
+            balances = self._query_private(path)
+
+            values = []
+
+            for balance in balances if balances is not None else []:
+
+                ccy = balance.get('currency_code')
+
+                try:
+                    unit = UnitType[ccy]
+                except KeyError:
+                    continue
+
+                value = Balance()
+                value.bc_site = self._ID
+                value.bc_acct = account_type
+                value.bc_unit = unit
+                value.bc_time = now
+                value.bc_amnt = balance.get('amount', None)
+
+                values.append(value)
+
+            self.__context.save_balances(values)
+
+            self.__logger.debug('Balances : %s - %s', account_type, values)
+
+        except Exception as e:
+
+            self.__logger.warn('Balance Failure - %s : %s - %s', account_type, type(e), e.args)
 
 
 def main():

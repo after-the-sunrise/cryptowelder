@@ -4,7 +4,7 @@ from unittest import TestCase, main
 from unittest.mock import MagicMock, call
 
 from cryptowelder.bitflyer import BitflyerWelder
-from cryptowelder.context import CryptowelderContext
+from cryptowelder.context import CryptowelderContext, AccountType, UnitType, TransactionType
 
 
 class TestBitflyerWelder(TestCase):
@@ -27,7 +27,8 @@ class TestBitflyerWelder(TestCase):
         self.context.is_closed = MagicMock(side_effect=(False, False, True))
         self.context.get_property = MagicMock(return_value=0.1)
         self.target._process_markets = MagicMock()
-        self.target._process_balance = MagicMock()
+        self.target._process_cash = MagicMock()
+        self.target._process_margin = MagicMock()
         self.target._loop()
         self.assertEqual(3, self.context.is_closed.call_count)
         self.assertEqual(2, self.context.get_property.call_count)
@@ -53,10 +54,10 @@ class TestBitflyerWelder(TestCase):
         """))
         self.target._process_markets()
 
-        products = ["BTC_JPY", "FX_BTC_JPY", "ETH_BTC", "BTCJPY28APR2017", "BTCJPY05MAY2017"]
-        self.target._process_ticker.assert_has_calls([call(p) for p in products])
-        self.target._process_position.assert_has_calls([call(p) for p in products])
-        self.target._process_transaction.assert_has_calls([call(p) for p in products])
+        for product in ["BTC_JPY", "FX_BTC_JPY", "ETH_BTC", "BTCJPY28APR2017", "BTCJPY05MAY2017"]:
+            self.target._process_ticker.assert_any_call(product)
+            self.target._process_position.assert_any_call(product)
+            self.target._process_transaction.assert_any_call(product)
 
         # Query Failure
         self.context.requests_get = MagicMock(side_effect=Exception('test'))
@@ -261,6 +262,118 @@ class TestBitflyerWelder(TestCase):
         self.target._query_private.reset_mock()
         self.target._process_position('BTC_JPY')
         self.target._query_private.assert_not_called()
+
+    def test__process_transaction(self):
+        self.context.save_transactions = MagicMock(side_effect=[[None], []])
+        self.target._query_private = MagicMock(side_effect=[CryptowelderContext._parse("""
+            [
+              {
+                "id": 37233,
+                "child_order_id": "JOR20150707-060559-021935",
+                "side": "BUY",
+                "price": 33470,
+                "size": 0.05,
+                "commission": 0.0001,
+                "exec_date": "2015-07-07T09:57:40.397",
+                "child_order_acceptance_id": "JRF20150707-060559-396699"
+              },
+              {
+                "id": 37232,
+                "child_order_id": "JOR20150707-060426-021925",
+                "side": "SELL",
+                "price": 33480,
+                "size": 0.05,
+                "commission": 0.0002,
+                "exec_date": "2015-07-07T09:57:41.398",
+                "child_order_acceptance_id": "JRF20150707-060559-396699"
+              }
+            ]
+        """), None])
+
+        self.target._process_transaction('FOO_BAR')
+        self.target._query_private.assert_has_calls([
+            call('/v1/me/getexecutions?count=500&product_code=FOO_BAR'),
+            call('/v1/me/getexecutions?count=500&product_code=FOO_BAR&before=37232'),
+        ])
+
+        calls = self.context.save_transactions.call_args_list
+        self.assertEqual(2, len(calls))
+
+        # First Loop
+        transactions = calls[0][0][0]
+        self.assertEqual(2, len(transactions))
+
+        self.assertEqual('bitflyer', transactions[0].tx_site)
+        self.assertEqual('FOO_BAR', transactions[0].tx_code)
+        self.assertEqual(TransactionType.TRADE, transactions[0].tx_type)
+        self.assertEqual(37233, transactions[0].tx_id)
+        self.assertEqual('2015-07-07 09:57:40.000000 UTC', transactions[0].tx_time.strftime(self.FORMAT))
+        self.assertEqual(Decimal('0.0499'), transactions[0].tx_inst)
+        self.assertEqual(Decimal('-1673.5'), transactions[0].tx_fund)
+
+        self.assertEqual('bitflyer', transactions[1].tx_site)
+        self.assertEqual('FOO_BAR', transactions[1].tx_code)
+        self.assertEqual(TransactionType.TRADE, transactions[1].tx_type)
+        self.assertEqual(37232, transactions[1].tx_id)
+        self.assertEqual('2015-07-07 09:57:41.000000 UTC', transactions[1].tx_time.strftime(self.FORMAT))
+        self.assertEqual(Decimal('-0.0502'), transactions[1].tx_inst)
+        self.assertEqual(Decimal('1674.0'), transactions[1].tx_fund)
+
+        # Second Loop
+        transactions = calls[1][0][0]
+        self.assertEqual(0, len(transactions))
+
+    def test__process_cash(self):
+        self.target._process_balance = MagicMock()
+        self.target._process_cash()
+        self.target._process_balance.assert_called_once_with('/v1/me/getbalance', AccountType.CASH)
+
+    def test__process_margin(self):
+        self.target._process_balance = MagicMock()
+        self.target._process_margin()
+        self.target._process_balance.assert_called_once_with('/v1/me/getcollateralaccounts', AccountType.MARGIN)
+
+    def test__process_balance(self):
+        now = datetime.fromtimestamp(1234567890)
+        self.context.get_now = MagicMock(return_value=now)
+        self.context.save_balances = MagicMock()
+        self.target._query_private = MagicMock(return_value=CryptowelderContext._parse("""
+            [
+              {
+                "currency_code": "JPY",
+                "amount": 1024078,
+                "available": 508000
+              },
+              {
+                "currency_code": "ETH",
+                "amount": 20.48,
+                "available": 16.38
+              },
+              {
+                "currency_code": "BTC",
+                "amount": 10.24,
+                "available": 4.12
+              }
+            ]
+        """))
+
+        self.target._process_balance('/FOO/BAR', AccountType.CASH)
+        self.target._query_private.assert_called_once_with('/FOO/BAR')
+
+        balances = self.context.save_balances.call_args[0][0]
+        self.assertEqual(2, len(balances))
+
+        self.assertEqual('bitflyer', balances[0].bc_site)
+        self.assertEqual(AccountType.CASH, balances[0].bc_acct)
+        self.assertEqual(1234567890, balances[0].bc_time.timestamp())
+        self.assertEqual(UnitType.JPY, balances[0].bc_unit)
+        self.assertEqual(Decimal('1024078'), balances[0].bc_amnt)
+
+        self.assertEqual('bitflyer', balances[1].bc_site)
+        self.assertEqual(AccountType.CASH, balances[1].bc_acct)
+        self.assertEqual(1234567890, balances[1].bc_time.timestamp())
+        self.assertEqual(UnitType.BTC, balances[1].bc_unit)
+        self.assertEqual(Decimal('10.24'), balances[1].bc_amnt)
 
 
 if __name__ == '__main__':
