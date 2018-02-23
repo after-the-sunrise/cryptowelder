@@ -42,6 +42,8 @@ class BitflyerWelder:
 
     def _loop(self):
 
+        self.__logger.info('Processing : %s', self.__endpoint)
+
         while not self.__context.is_closed():
 
             threads = [
@@ -57,6 +59,8 @@ class BitflyerWelder:
                 t.join()
 
             sleep(self.__context.get_property(self._ID, 'interval', 15))
+
+        self.__logger.info('Terminated.')
 
     def _process_markets(self):
 
