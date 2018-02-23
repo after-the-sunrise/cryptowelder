@@ -208,23 +208,23 @@ class BitflyerWelder:
             if 'FX_BTC_JPY' != code and not self.__is_futures(code):
                 return
 
-            positions = self._query_private('/v1/me/getpositions?product_code=' + code)
-
             now = self.__context.get_now()
-            amount_inst = None
-            amount_fund = None
+            amount_inst = self._ZERO
+            amount_fund = self._ZERO
+
+            positions = self._query_private('/v1/me/getpositions?product_code=' + code)
 
             for position in positions if positions is not None else []:
                 # Instrument Position
                 sign = self._SIDE.get(position.get('side', None), self._ZERO)
                 inst = position.get('size', self._ZERO) * sign
-                amount_inst = (amount_inst if amount_inst is not None else self._ZERO) + inst
+                amount_inst = amount_inst + inst
 
                 # P&L
                 pnl = position.get('pnl', self._ZERO)
                 swp = position.get('swap_point_accumulate', self._ZERO)
                 cmm = position.get('commission', self._ZERO)
-                amount_fund = (amount_fund if amount_fund is not None else self._ZERO) + pnl - swp - cmm
+                amount_fund = amount_fund + pnl - swp - cmm
 
             position = Position()
             position.ps_site = self._ID
