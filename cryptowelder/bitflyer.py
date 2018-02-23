@@ -245,11 +245,13 @@ class BitflyerWelder:
 
         try:
 
+            limit = self.__context.get_property(self._ID, 'tx_limit', 100)
+
             sequence = None
 
             while True:
 
-                path = '/v1/me/getexecutions?count=100&product_code=%s' % code
+                path = '/v1/me/getexecutions?count=%s&product_code=%s' % (limit, code)
 
                 if sequence is not None:
                     path = path + '&before=%s' % sequence
