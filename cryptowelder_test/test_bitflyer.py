@@ -117,6 +117,14 @@ class TestBitflyerWelder(TestCase):
         self.assertIsNone(tickers[0].tk_bid)
         self.assertEqual(Decimal('1.234'), tickers[0].tk_ltp)
 
+        # Query Failure
+        self.target._fetch_special_quotation.reset_mock()
+        self.target._fetch_special_quotation.side_effect = Exception('test')
+        self.context.save_tickers.reset_mock()
+        self.target._process_ticker("FOO_BAR")
+        self.target._fetch_special_quotation.assert_called_once()
+        self.context.save_tickers.assert_not_called()
+
     def test__fetch_special_quotation(self):
         self.context.requests_get = MagicMock()
         url = "https://api.bitflyer.jp/v1/getboardstate?product_code=BTCJPY14APR2017"
@@ -263,6 +271,14 @@ class TestBitflyerWelder(TestCase):
         self.target._process_position('BTC_JPY')
         self.target._query_private.assert_not_called()
 
+        # Query Failure
+        self.target._query_private.reset_mock()
+        self.target._query_private.side_effect = Exception('test')
+        self.context.save_positions.reset_mock()
+        self.target._process_position("FX_BTC_JPY")
+        self.target._query_private.assert_called_once()
+        self.context.save_positions.assert_not_called()
+
     def test__process_transaction(self):
         self.context.save_transactions = MagicMock(side_effect=[[None], []])
         self.target._query_private = MagicMock(side_effect=[CryptowelderContext._parse("""
@@ -323,6 +339,14 @@ class TestBitflyerWelder(TestCase):
         transactions = calls[1][0][0]
         self.assertEqual(0, len(transactions))
 
+        # Query Failure
+        self.target._query_private.reset_mock()
+        self.target._query_private.side_effect = Exception('test')
+        self.context.save_transactions.reset_mock()
+        self.target._process_transaction("FOO_BAR")
+        self.target._query_private.assert_called_once()
+        self.context.save_transactions.assert_not_called()
+
     def test__process_cash(self):
         self.target._process_balance = MagicMock()
         self.target._process_cash()
@@ -374,6 +398,14 @@ class TestBitflyerWelder(TestCase):
         self.assertEqual(1234567890, balances[1].bc_time.timestamp())
         self.assertEqual(UnitType.BTC, balances[1].bc_unit)
         self.assertEqual(Decimal('10.24'), balances[1].bc_amnt)
+
+        # Query Failure
+        self.target._query_private.reset_mock()
+        self.target._query_private.side_effect = Exception('test')
+        self.context.save_balances.reset_mock()
+        self.target._process_balance('/FOO/BAR', AccountType.CASH)
+        self.target._query_private.assert_called_once()
+        self.context.save_balances.assert_not_called()
 
 
 if __name__ == '__main__':
