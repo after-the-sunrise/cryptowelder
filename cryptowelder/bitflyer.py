@@ -28,10 +28,7 @@ class BitflyerWelder:
     def __init__(self, context):
         self.__context = context
         self.__logger = context.get_logger(self)
-        self.__endpoint = context.get_property(self._ID, 'endpoint', 'https://api.bitflyer.jp')
-        self.__interval = context.get_property(self._ID, 'interval', 15)
-        self.__apikey = context.get_property(self._ID, 'apikey', None)
-        self.__secret = context.get_property(self._ID, 'secret', None)
+        self.__endpoint = self.__context.get_property(self._ID, 'endpoint', 'https://api.bitflyer.jp')
         self.__thread = Thread(daemon=False, target=self._loop)
 
     def run(self):
@@ -44,12 +41,10 @@ class BitflyerWelder:
 
     def _loop(self):
 
-        self.__logger.info('Endpoint=[%s] Interval=[%s] Key=[%s]', self.__endpoint, self.__interval, self.__apikey)
-
         while not self.__context.is_closed():
 
             threads = [
-                Thread(target=self._process_market),
+                Thread(target=self._process_markets),
                 Thread(target=self._process_balance),
             ]
 
@@ -59,9 +54,9 @@ class BitflyerWelder:
             for t in threads:
                 t.join()
 
-            sleep(self.__interval)
+            sleep(self.__context.get_property(self._ID, 'interval', 15))
 
-    def _process_market(self):
+    def _process_markets(self):
 
         try:
 
@@ -157,17 +152,20 @@ class BitflyerWelder:
 
     def _query_private(self, path):
 
-        if self.__apikey is None or self.__secret is None:
+        apikey = self.__context.get_property(self._ID, 'apikey', None)
+        secret = self.__context.get_property(self._ID, 'secret', None)
+
+        if apikey is None or secret is None:
             return None
 
         timestamp = str(int(self.__context.get_now().timestamp() * 1000))
 
         data = timestamp + "GET" + path
 
-        digest = new(str.encode(self.__secret), str.encode(data), sha256).hexdigest()
+        digest = new(str.encode(secret), str.encode(data), sha256).hexdigest()
 
         headers = {
-            "ACCESS-KEY": self.__apikey,
+            "ACCESS-KEY": apikey,
             "ACCESS-TIMESTAMP": timestamp,
             "ACCESS-SIGN": digest,
             "Content-Type": "application/json"

@@ -1,26 +1,63 @@
 from decimal import Decimal
-from unittest import TestCase, main, mock
+from unittest import TestCase, main
+from unittest.mock import MagicMock, call
 
 from cryptowelder.bitflyer import BitflyerWelder
+from cryptowelder.context import CryptowelderContext
 
 
 class TestBitflyerWelder(TestCase):
 
     def setUp(self):
-        self.context = mock.MagicMock()
-        self.context.get_logger.return_value = mock.MagicMock()
+        self.context = MagicMock()
+        self.context.get_logger.return_value = MagicMock()
         self.context.get_property = lambda section, key, val: val
 
         self.target = BitflyerWelder(self.context)
 
     def test_run(self):
-        self.context.is_closed = mock.MagicMock(return_value=True)
+        self.context.is_closed = MagicMock(return_value=True)
         self.target.run()
         self.target._join()
         self.context.is_closed.assert_called_once()
 
+    def test___loop(self):
+        self.context.is_closed = MagicMock(side_effect=(False, False, True))
+        self.context.get_property = MagicMock(return_value=0.1)
+        self.target._process_markets = MagicMock()
+        self.target._process_balance = MagicMock()
+        self.target._loop()
+        self.assertEqual(3, self.context.is_closed.call_count)
+        self.assertEqual(2, self.context.get_property.call_count)
+
+    def test__process_markets(self):
+        self.target._process_ticker = MagicMock()
+        self.target._process_position = MagicMock()
+        self.target._process_transaction = MagicMock()
+        self.context.requests_get = MagicMock(return_value=CryptowelderContext._parse("""
+        [
+          { "product_code": "BTC_JPY" },
+          { "product_code": "FX_BTC_JPY" },
+          { "product_code": "ETH_BTC" },
+          {
+            "product_code": "BTCJPY28APR2017",
+            "alias": "BTCJPY_MAT1WK"
+          },
+          {
+            "product_code": "BTCJPY05MAY2017",
+            "alias": "BTCJPY_MAT2WK"
+          }
+        ]
+        """))
+        self.target._process_markets()
+
+        products = ["BTC_JPY", "FX_BTC_JPY", "ETH_BTC", "BTCJPY28APR2017", "BTCJPY05MAY2017"]
+        self.target._process_ticker.assert_has_calls([call(p) for p in products])
+        self.target._process_position.assert_has_calls([call(p) for p in products])
+        self.target._process_transaction.assert_has_calls([call(p) for p in products])
+
     def test__fetch_special_quotation(self):
-        self.context.requests_get = mock.MagicMock()
+        self.context.requests_get = MagicMock()
         url = "https://api.bitflyer.jp/v1/getboardstate?product_code=BTCJPY14APR2017"
 
         # Valid

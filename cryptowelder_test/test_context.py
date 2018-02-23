@@ -6,7 +6,8 @@ from logging import DEBUG, StreamHandler
 from logging.handlers import BufferingHandler
 from threading import Thread
 from time import sleep
-from unittest import TestCase, main, mock
+from unittest import TestCase, main
+from unittest.mock import MagicMock
 
 from requests import get
 
@@ -81,7 +82,7 @@ class TestCryptowelderContext(TestCase):
         self.assertIsNotNone(self.target.get_now())
 
     def test_launch_prometheus(self):
-        method = mock.MagicMock()
+        method = MagicMock()
 
         # Default
         self.target.launch_prometheus(method=method)
@@ -92,6 +93,14 @@ class TestCryptowelderContext(TestCase):
         self.target.set_property(self.target.SECTION, 'prometheus_port', '65535')
         self.target.launch_prometheus(method=method)
         method.assert_called_with(65535, addr='127.0.0.1')
+
+    def test__parse(self):
+        result = self.target._parse('{"str":"foo", "int":123, "flt":1.2, "flg":true}')
+        self.assertEqual(len(result), 4)
+        self.assertEqual(result['str'], "foo")
+        self.assertEqual(result['int'], 123)
+        self.assertEqual(result['flt'], Decimal('1.2'))
+        self.assertEqual(result['flg'], True)
 
     def test__request(self):
         TestHander.init(content='{"str":"foo", "int":123, "flt":1.2, "flg":true}')
@@ -118,13 +127,13 @@ class TestCryptowelderContext(TestCase):
 
     def test_requests_get(self):
         response = "{'foo': 'bar'}"
-        self.target._request = mock.MagicMock(return_value=response)
+        self.target._request = MagicMock(return_value=response)
         self.assertEqual(self.target.requests_get('http://localhost:65535'), response)
         self.target._request.assert_called_once()
 
     def test_requests_post(self):
         response = "{'foo': 'bar'}"
-        self.target._request = mock.MagicMock(return_value=response)
+        self.target._request = MagicMock(return_value=response)
         self.assertEqual(self.target.requests_post('http://localhost:65535'), response)
         self.target._request.assert_called_once()
 

@@ -99,6 +99,10 @@ class CryptowelderContext:
 
         method(int(port), addr=host)
 
+    @staticmethod
+    def _parse(json):
+        return loads(json, parse_float=Decimal)
+
     def _request(self, method):
 
         attempt = int(self.get_property(self.SECTION, "request_retry", 1)) + 1
@@ -119,7 +123,7 @@ class CryptowelderContext:
 
                     if r.ok:
 
-                        result = loads(r.text, parse_float=Decimal)
+                        result = self._parse(r.text)
 
                     else:
 
