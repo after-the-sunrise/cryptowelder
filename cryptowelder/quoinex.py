@@ -155,13 +155,13 @@ class QuoinexWelder:
 
                 limit = self.__context.get_property(self._ID, 'tx_limit', 100)
 
-                page = 0
+                page = 1
 
                 while True:
 
                     path = '/executions/me?limit=%s&product_id=%s' % (limit, product_id)
 
-                    if page > 0:
+                    if page > 1:
                         path = path + '&page=%s' % page
 
                     result = self._query_private(path)
