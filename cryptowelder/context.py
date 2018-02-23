@@ -21,7 +21,7 @@ class CryptowelderContext:
     TIMEZONE = timezone("Asia/Tokyo")
     ENTITY_BASE = declarative_base()
 
-    def __init__(self, *, read_only=True, config=None, debug=True):
+    def __init__(self, *, config=None, read_only=True, debug=True):
         # Read-only for testing
         self.__read_only = read_only
 

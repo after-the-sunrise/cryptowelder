@@ -4,7 +4,7 @@ import cryptowelder
 
 
 def main():
-    context = cryptowelder.Context(read_only=False, config='~/.cryptowelder')
+    context = cryptowelder.Context(config='~/.cryptowelder', read_only=False, debug=False)
     context.launch_prometheus()
 
     cryptowelder.BitflyerWelder(context).run()
