@@ -326,7 +326,8 @@ class BitflyerWelder:
 
             self.__context.save_balances(values)
 
-            self.__logger.debug('Balances : %s - %s', account_type, values)
+            for value in values:
+                self.__logger.debug('Balance : %s - %s', account_type.name, value)
 
         except Exception as e:
 
