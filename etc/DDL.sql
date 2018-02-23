@@ -97,7 +97,8 @@ CREATE TABLE t_transaction
   tx_site VARCHAR(16) NOT NULL,
   tx_code VARCHAR(32) NOT NULL,
   tx_type VARCHAR(16) NOT NULL,
-  tx_id   VARCHAR(64) NOT NULL,
+  tx_oid  VARCHAR(64) NOT NULL,
+  tx_eid  VARCHAR(64) NOT NULL,
   tx_time TIMESTAMP   NOT NULL,
   tx_inst DECIMAL(32, 16),
   tx_fund DECIMAL(32, 16)
@@ -110,7 +111,8 @@ PRIMARY KEY
     tx_site,
     tx_code,
     tx_type,
-    tx_id
+    tx_oid,
+    tx_eid
   );
 
 CREATE INDEX i_transaction_1

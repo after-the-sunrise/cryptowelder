@@ -259,7 +259,7 @@ class BitflyerWelder:
                 values = []
 
                 for execution in executions if executions is not None else []:
-                    exec_id = execution.get('id', None)
+                    exec_id = execution.get('id', None)  # Self-cross has same ids.
                     exec_od = execution.get('child_order_id', None)
                     exec_ts = execution.get('exec_date', None)
                     exec_sd = execution.get('side', None)
@@ -273,7 +273,8 @@ class BitflyerWelder:
                     value.tx_site = self._ID
                     value.tx_code = code
                     value.tx_type = TransactionType.TRADE
-                    value.tx_id = exec_od + '@' + str(exec_id)  # self-cross has same id.
+                    value.tx_oid = exec_od
+                    value.tx_eid = str(exec_id)
                     value.tx_time = self._parse_timestamp(exec_ts)
                     value.tx_inst = (exec_in * self._SIDE[exec_sd]) - exec_cm
                     value.tx_fund = (exec_in * self._SIDE[exec_sd]) * exec_px * -1

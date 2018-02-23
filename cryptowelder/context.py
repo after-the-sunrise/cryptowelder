@@ -315,7 +315,8 @@ class CryptowelderContext:
                     Transaction.tx_site == t.tx_site,
                     Transaction.tx_code == t.tx_code,
                     Transaction.tx_type == t.tx_type,
-                    Transaction.tx_id == t.tx_id,
+                    Transaction.tx_oid == t.tx_oid,
+                    Transaction.tx_eid == t.tx_eid,
                 ).first()
 
                 if first is not None:
@@ -325,7 +326,8 @@ class CryptowelderContext:
                 truncated.tx_site = t.tx_site
                 truncated.tx_code = t.tx_code
                 truncated.tx_type = t.tx_type
-                truncated.tx_id = t.tx_id
+                truncated.tx_oid = t.tx_oid
+                truncated.tx_eid = t.tx_eid
                 truncated.tx_time = t.tx_time.astimezone(self.TIMEZONE)
                 truncated.tx_inst = t.tx_inst
                 truncated.tx_fund = t.tx_fund
@@ -430,7 +432,8 @@ class Transaction(CryptowelderContext.ENTITY_BASE):
     tx_site = Column(String, primary_key=True)
     tx_code = Column(String, primary_key=True)
     tx_type = Column(Type(TransactionType), primary_key=True)
-    tx_id = Column(String, primary_key=True)
+    tx_oid = Column(String, primary_key=True)
+    tx_eid = Column(String, primary_key=True)
     tx_time = Column(DateTime, nullable=False)
     tx_inst = Column(Numeric)
     tx_fund = Column(Numeric)
@@ -441,7 +444,8 @@ class Transaction(CryptowelderContext.ENTITY_BASE):
             'site': self.tx_site,
             'code': self.tx_code,
             'type': self.tx_type,
-            'id': self.tx_id,
+            'oid': self.tx_oid,
+            'eid': self.tx_eid,
             'time': self.tx_time,
             'instrument': self.tx_inst,
             'funding': self.tx_fund,
