@@ -56,6 +56,16 @@ class TestBitflyerWelder(TestCase):
         self.target._process_position.assert_has_calls([call(p) for p in products])
         self.target._process_transaction.assert_has_calls([call(p) for p in products])
 
+        # Query Failure
+        self.context.requests_get = MagicMock(side_effect=Exception('test'))
+        self.target._process_ticker.reset_mock()
+        self.target._process_position.reset_mock()
+        self.target._process_transaction.reset_mock()
+        self.target._process_markets()
+        self.target._process_ticker.assert_not_called()
+        self.target._process_position.assert_not_called()
+        self.target._process_transaction.assert_not_called()
+
     def test__fetch_special_quotation(self):
         self.context.requests_get = MagicMock()
         url = "https://api.bitflyer.jp/v1/getboardstate?product_code=BTCJPY14APR2017"
