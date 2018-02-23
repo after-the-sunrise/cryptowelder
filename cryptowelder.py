@@ -8,6 +8,7 @@ def main():
     context.launch_prometheus()
 
     cryptowelder.BitflyerWelder(context).run()
+    cryptowelder.QuoinexWelder(context).run()
 
 
 if __name__ == '__main__':
