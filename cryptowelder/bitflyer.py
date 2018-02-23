@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from decimal import Decimal
 from hashlib import sha256
 from hmac import new
@@ -342,6 +342,26 @@ def main():
 
     target = BitflyerWelder(context)
     target.run()
+
+
+def main_historical():
+    context = CryptowelderContext(config='~/.cryptowelder', debug=True)
+    context.launch_prometheus()
+
+    target = BitflyerWelder(context)
+
+    maturity = datetime(year=2017, month=4, day=28)
+
+    while maturity < datetime.now():
+        y = maturity.strftime('%Y')
+        m = [k for k, v in BitflyerWelder._MONTHS.items() if v == maturity.month][0]
+        d = maturity.strftime('%d')
+
+        product = 'BTCJPY%s%s%s' % (d, m, y)
+        target._process_ticker(product)
+        target._process_transaction(product)
+
+        maturity = maturity + timedelta(days=7)
 
 
 if __name__ == '__main__':
