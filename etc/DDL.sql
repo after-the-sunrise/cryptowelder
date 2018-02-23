@@ -39,7 +39,7 @@ CREATE TABLE t_balance
   bc_acct VARCHAR(36) NOT NULL,
   bc_unit VARCHAR(36) NOT NULL,
   bc_time TIMESTAMP   NOT NULL,
-  tx_amnt DECIMAL(20, 8)
+  bc_amnt DECIMAL(20, 8)
 );
 
 ALTER TABLE t_balance

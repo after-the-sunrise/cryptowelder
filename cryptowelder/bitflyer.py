@@ -268,7 +268,7 @@ class BitflyerWelder:
                     value.tx_site = self._ID
                     value.tx_code = code
                     value.tx_type = TransactionType.TRADE
-                    value.tx_id = exec_id
+                    value.tx_id = str(exec_id)
                     value.tx_time = self._parse_timestamp(exec_ts)
                     value.tx_inst = (exec_in * self._SIDE[exec_sd]) - exec_cm
                     value.tx_fund = (exec_in * self._SIDE[exec_sd]) * exec_px * -1
