@@ -161,10 +161,14 @@ class TestCryptowelderContext(TestCase):
         self.assertTrue(t2 in results)
 
         # Existing records
-        results = self.target.save_tickers([t3, None, t5, t4])
+        results = self.target.save_tickers([t3, None, t4])
         self.assertEqual(len(results), 2)
         self.assertTrue(t3 in results)
         self.assertTrue(t4 in results)
+
+        # PK Failure
+        with self.assertRaises(BaseException):
+            self.target.save_tickers([t5])
 
         # Read-only
         self.target._is_read_only = lambda: True
@@ -206,10 +210,14 @@ class TestCryptowelderContext(TestCase):
         self.assertTrue(b2 in results)
 
         # Existing records
-        results = self.target.save_balances([b3, None, b5, b4])
+        results = self.target.save_balances([b3, None, b4])
         self.assertEqual(len(results), 2)
         self.assertTrue(b3 in results)
         self.assertTrue(b4 in results)
+
+        # PK Failure
+        with self.assertRaises(BaseException):
+            self.target.save_balances([b5])
 
         # Read-only
         self.target._is_read_only = lambda: True
@@ -253,10 +261,14 @@ class TestCryptowelderContext(TestCase):
         self.assertTrue(p2 in results)
 
         # Existing records
-        results = self.target.save_positions([p3, None, p5, p4])
+        results = self.target.save_positions([p3, None, p4])
         self.assertEqual(len(results), 2)
         self.assertTrue(p3 in results)
         self.assertTrue(p4 in results)
+
+        # PK Failure
+        with self.assertRaises(BaseException):
+            self.target.save_positions([p5])
 
         # Read-only
         self.target._is_read_only = lambda: True
@@ -315,13 +327,17 @@ class TestCryptowelderContext(TestCase):
         self.assertTrue(t3 in results)
 
         # One new record
-        results = self.target.save_transactions([t2c, t3c, None, t4c, t4])
+        results = self.target.save_transactions([t2c, t3c, None, t4])
         self.assertEqual(len(results), 1)
         self.assertTrue(t4 in results)
 
         # No record
         results = self.target.save_transactions(None)
         self.assertEqual(len(results), 0)
+
+        # PK Failure
+        with self.assertRaises(BaseException):
+            self.target.save_transactions([t4c])
 
         # Read-only
         self.target._is_read_only = lambda: True

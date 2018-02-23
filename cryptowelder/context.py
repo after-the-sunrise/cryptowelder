@@ -174,11 +174,7 @@ class CryptowelderContext:
                     self.__logger.debug("Skipping : %s", t)
                     continue
 
-                if t is None or len([field for field in (
-                        t.tk_site,
-                        t.tk_code,
-                        t.tk_time,
-                ) if field is None]) > 0:
+                if t is None:
                     continue
 
                 truncated = Ticker()
@@ -195,6 +191,12 @@ class CryptowelderContext:
 
             if len(merged) > 0:
                 session.commit()
+
+        except BaseException as e:
+
+            session.rollback()
+
+            raise e
 
         finally:
 
@@ -216,12 +218,7 @@ class CryptowelderContext:
                     self.__logger.debug("Skipping : %s", b)
                     continue
 
-                if b is None or len([field for field in (
-                        b.bc_site,
-                        b.bc_acct,
-                        b.bc_unit,
-                        b.bc_time,
-                ) if field is None]) > 0:
+                if b is None:
                     continue
 
                 truncated = Balance()
@@ -237,6 +234,12 @@ class CryptowelderContext:
 
             if len(merged) > 0:
                 session.commit()
+
+        except BaseException as e:
+
+            session.rollback()
+
+            raise e
 
         finally:
 
@@ -258,11 +261,7 @@ class CryptowelderContext:
                     self.__logger.debug("Skipping : %s", p)
                     continue
 
-                if p is None or len([field for field in (
-                        p.ps_site,
-                        p.ps_code,
-                        p.ps_time,
-                ) if field is None]) > 0:
+                if p is None:
                     continue
 
                 truncated = Position()
@@ -278,6 +277,12 @@ class CryptowelderContext:
 
             if len(merged) > 0:
                 session.commit()
+
+        except BaseException as e:
+
+            session.rollback()
+
+            raise e
 
         finally:
 
@@ -299,13 +304,7 @@ class CryptowelderContext:
                     self.__logger.debug("Skipping : %s", t)
                     continue
 
-                if t is None or len([field for field in (
-                        t.tx_site,
-                        t.tx_code,
-                        t.tx_type,
-                        t.tx_id,
-                        t.tx_time,
-                ) if field is None]) > 0:
+                if t is None:
                     continue
 
                 first = session.query(Transaction).filter(
@@ -332,6 +331,12 @@ class CryptowelderContext:
             if len(candidates) > 0:
                 session.add_all(candidates.values())
                 session.commit()
+
+        except BaseException as e:
+
+            session.rollback()
+
+            raise e
 
         finally:
 
@@ -378,25 +383,6 @@ class Ticker(CryptowelderContext.ENTITY_BASE):
         })
 
 
-class Position(CryptowelderContext.ENTITY_BASE):
-    __tablename__ = "t_position"
-    ps_site = Column(String, primary_key=True)
-    ps_code = Column(String, primary_key=True)
-    ps_time = Column(DateTime, primary_key=True)
-    ps_inst = Column(Numeric)
-    ps_fund = Column(Numeric)
-
-    def __str__(self):
-        return str({
-            'table': self.__tablename__,
-            'site': self.ps_site,
-            'code': self.ps_code,
-            'time': self.ps_time,
-            'instrument': self.ps_inst,
-            'funding': self.ps_fund,
-        })
-
-
 class Balance(CryptowelderContext.ENTITY_BASE):
     __tablename__ = "t_balance"
     bc_site = Column(String, primary_key=True)
@@ -413,6 +399,25 @@ class Balance(CryptowelderContext.ENTITY_BASE):
             'unit': self.bc_unit,
             'time': self.bc_time,
             'amount': self.bc_amnt,
+        })
+
+
+class Position(CryptowelderContext.ENTITY_BASE):
+    __tablename__ = "t_position"
+    ps_site = Column(String, primary_key=True)
+    ps_code = Column(String, primary_key=True)
+    ps_time = Column(DateTime, primary_key=True)
+    ps_inst = Column(Numeric)
+    ps_fund = Column(Numeric)
+
+    def __str__(self):
+        return str({
+            'table': self.__tablename__,
+            'site': self.ps_site,
+            'code': self.ps_code,
+            'time': self.ps_time,
+            'instrument': self.ps_inst,
+            'funding': self.ps_fund,
         })
 
 
