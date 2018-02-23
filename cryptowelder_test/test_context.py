@@ -291,7 +291,8 @@ class TestCryptowelderContext(TestCase):
         t1.tx_site = 'ts'
         t1.tx_code = 'tp'
         t1.tx_type = TransactionType.TRADE
-        t1.tx_id = 'ti'
+        t1.tx_oid = 'to'
+        t1.tx_eid = 'te'
         t1.tx_time = datetime.now()
         t1.tx_fund = -1.2
         t1.tx_inst = +2.3
@@ -300,7 +301,8 @@ class TestCryptowelderContext(TestCase):
         t2.tx_site = 'ts'
         t2.tx_code = 'tp'
         t2.tx_type = TransactionType.TRADE
-        t2.tx_id = 'NEW'
+        t2.tx_oid = 'NEW'
+        t2.tx_eid = 'te'
         t2.tx_time = datetime.now()
         t2.tx_fund = -2.3
         t2.tx_inst = +3.4
@@ -309,7 +311,8 @@ class TestCryptowelderContext(TestCase):
         t3.tx_site = 'ts'
         t3.tx_code = 'NEW'
         t3.tx_type = TransactionType.TRADE
-        t3.tx_id = 'ti'
+        t3.tx_oid = 'to'
+        t3.tx_eid = 'te'
         t3.tx_time = datetime.now()
         t3.tx_fund = -3.4
         t3.tx_inst = +4.5
@@ -318,7 +321,8 @@ class TestCryptowelderContext(TestCase):
         t4.tx_site = 'NEW'
         t4.tx_code = 'tp'
         t4.tx_type = TransactionType.TRADE
-        t4.tx_id = 'ti'
+        t4.tx_oid = 'to'
+        t4.tx_eid = 'te'
         t4.tx_time = datetime.now()
         t4.tx_fund = -4.5
         t4.tx_inst = +5.6
@@ -326,7 +330,7 @@ class TestCryptowelderContext(TestCase):
         t2c = copy(t2)
         t3c = copy(t3)
         t4c = copy(t4)
-        t4c.tx_id = None
+        t4c.tx_oid = None
 
         # All new records
         results = self.target.save_transactions([t1, t2, t3])
