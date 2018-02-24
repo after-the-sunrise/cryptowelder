@@ -1,6 +1,7 @@
 from cryptowelder import bitbank
 from cryptowelder import bitfinex
 from cryptowelder import bitflyer
+from cryptowelder import bitmex
 from cryptowelder import btcbox
 from cryptowelder import coincheck
 from cryptowelder import context
@@ -14,6 +15,7 @@ Context = context.CryptowelderContext
 BitbankWelder = bitbank.BitbankWelder
 BitfinexWelder = bitfinex.BitfinexWelder
 BitflyerWelder = bitflyer.BitflyerWelder
+BitmexWelder = bitmex.BitmexWelder
 BtcboxWelder = btcbox.BtcboxWelder
 CoincheckWelder = coincheck.CoincheckWelder
 OandaWelder = oanda.OandaWelder
