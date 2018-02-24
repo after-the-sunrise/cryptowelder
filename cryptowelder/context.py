@@ -158,6 +158,10 @@ class CryptowelderContext:
 
                 sleep(float(self.get_property(self.SECTION, "request_sleep", 1.0)))
 
+        else:
+
+            self.__logger.warning('Request retry exceeded : %s', attempt)
+
         return result
 
     def requests_get(self, url, params=None, **kwargs):
