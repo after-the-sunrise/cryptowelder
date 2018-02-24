@@ -1,15 +1,19 @@
+from datetime import datetime
 from decimal import Decimal
 from hashlib import sha256
 from hmac import new
 from threading import Thread, Lock
 from time import sleep
+from urllib import parse
 
-from cryptowelder.context import CryptowelderContext, Ticker, Balance, AccountType, UnitType
+from cryptowelder.context import CryptowelderContext, Ticker, Transaction, Balance, AccountType, UnitType, \
+    TransactionType
 
 
 class BitbankWelder:
     _ID = 'bitbank'
     _ZERO = Decimal('0')
+    _SIDE = {'buy': Decimal('+1'), 'sell': Decimal('-1')}
 
     def __init__(self, context):
         self.__context = context
@@ -37,12 +41,12 @@ class BitbankWelder:
             ]
 
             pairs = self.__context.get_property(
-                #                self._ID, 'pairs', 'btc_jpy,eth_btc,bcc_btc,bcc_jpy,ltc_btc'
-                self._ID, 'pairs', 'btc_jpy,eth_btc'
+                self._ID, 'pairs', 'btc_jpy,eth_btc,bcc_btc,bcc_jpy,ltc_btc'
             ).split(',')
 
             for pair in pairs:
                 threads.append(Thread(target=self._process_ticker, args=(pair,)))
+                threads.append(Thread(target=self._process_transaction, args=(pair,)))
 
             for t in threads:
                 t.start()
@@ -83,7 +87,7 @@ class BitbankWelder:
 
             self.__logger.warn('Ticker Failure - %s : %s - %s', pair, type(e), e.args)
 
-    def _query_private(self, path, *, body=''):
+    def _query_private(self, path):
 
         apikey = self.__context.get_property(self._ID, 'apikey', None)
         secret = self.__context.get_property(self._ID, 'secret', None)
@@ -96,7 +100,7 @@ class BitbankWelder:
 
             timestamp = str(int(self.__context.get_now().timestamp() * 1000))
 
-            data = timestamp + path + body
+            data = timestamp + path
 
             digest = new(str.encode(secret), str.encode(data), sha256).hexdigest()
 
@@ -108,6 +112,59 @@ class BitbankWelder:
             }
 
             return self.__context.requests_get(self.__endpoint + path, headers=headers)
+
+    def _process_transaction(self, pair):
+
+        if self.__context.get_property(self._ID, 'skip', True):
+            # Temporary out of service.
+            # TODO : Test and remove once available.
+            return
+
+        try:
+
+            headers = {
+                'pair': pair,
+                'count': '100',
+                'order': 'desc',
+            }
+
+            while True:
+
+                response = self._query_private('/user/spot/trade_history?' + parse.urlencode(headers))
+
+                if response.get('success', 1) != 1:
+                    raise Exception(str(response))
+
+                trades = response.get('data', {}).get('trades', [])
+
+                values = []
+
+                for trade in trades:
+                    value = Transaction()
+                    value.tx_site = self._ID
+                    value.tx_code = pair
+                    value.tx_type = TransactionType.TRADE
+                    value.tx_oid = str(trade.get('order_id'))
+                    value.tx_eid = str(trade.get('trade_id'))
+                    value.tx_time = datetime.utcfromtimestamp(trade.get('executed_at'))
+                    value.tx_inst = Decimal(trade.get('amount')) * self._SIDE[trade.get('side')]
+                    value.tx_fund = Decimal(trade.get('price')) * value.tx_inst * -1
+
+                    values.append(value)
+
+                self.__logger.debug('Transactions : %s - fetched=[%s] end=[%s]',
+                                    pair, len(values), headers.get('end', None))
+
+                results = self.__context.save_transactions(values)
+
+                if len(results) <= 0:
+                    break
+
+                headers['end'] = min([trade.get('executed_at') for trade in trades])
+
+        except Exception as e:
+
+            self.__logger.warn('Transaction Failure - %s : %s - %s', pair, type(e), e.args)
 
     def _process_balance(self):
 
