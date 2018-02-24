@@ -364,6 +364,7 @@ class UnitType(Enum):
     BCH = auto()
     ETH = auto()
     ETC = auto()
+    LTC = auto()
 
 
 class TransactionType(Enum):
