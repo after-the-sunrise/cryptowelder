@@ -71,7 +71,7 @@ class BitflyerWelder:
             codes = []
 
             for market in markets if markets is not None else []:
-                code = market.get('product_code', None)
+                code = market.get('product_code')
 
                 codes.append(code)
 
@@ -115,10 +115,10 @@ class BitflyerWelder:
                 json = self.__context.requests_get(self.__endpoint + '/v1/ticker?product_code=' + code)
                 json = json if json is not None else {}
 
-                ticker.tk_time = self.__context.parse_iso_timestamp(json.get('timestamp', None))
-                ticker.tk_ask = json.get('best_ask', None)
-                ticker.tk_bid = json.get('best_bid', None)
-                ticker.tk_ltp = json.get('ltp', None)
+                ticker.tk_time = self.__context.parse_iso_timestamp(json.get('timestamp'))
+                ticker.tk_ask = json.get('best_ask')
+                ticker.tk_bid = json.get('best_bid')
+                ticker.tk_ltp = json.get('ltp')
 
             self.__context.save_tickers([ticker])
 
@@ -138,7 +138,7 @@ class BitflyerWelder:
 
         json = self.__context.requests_get(self.__endpoint + '/v1/getboardstate?product_code=' + code)
 
-        return json.get('data', json).get('special_quotation', None) if json is not None else None
+        return json.get('data', json).get('special_quotation') if json is not None else None
 
     def _parse_expiry(self, code):
 
@@ -200,7 +200,7 @@ class BitflyerWelder:
 
             for position in positions if positions is not None else []:
                 # Instrument Position
-                sign = self._SIDE.get(position.get('side', None), self._ZERO)
+                sign = self._SIDE.get(position.get('side'), self._ZERO)
                 inst = position.get('size', self._ZERO) * sign
                 amount_inst = amount_inst + inst
 
@@ -245,12 +245,12 @@ class BitflyerWelder:
                 values = []
 
                 for execution in executions if executions is not None else []:
-                    exec_id = execution.get('id', None)  # Self-cross has same ids.
-                    exec_od = execution.get('child_order_id', None)
-                    exec_ts = execution.get('exec_date', None)
-                    exec_sd = execution.get('side', None)
-                    exec_in = execution.get('size', None)
-                    exec_px = execution.get('price', None)
+                    exec_id = execution.get('id')  # Self-cross has same ids.
+                    exec_od = execution.get('child_order_id')
+                    exec_ts = execution.get('exec_date')
+                    exec_sd = execution.get('side')
+                    exec_in = execution.get('size')
+                    exec_px = execution.get('price')
                     exec_cm = execution.get('commission', self._ZERO)
 
                     sequence = exec_id if sequence is None else min(exec_id, sequence)
@@ -308,7 +308,7 @@ class BitflyerWelder:
                 value.bc_acct = account_type
                 value.bc_unit = unit
                 value.bc_time = now
-                value.bc_amnt = balance.get('amount', None)
+                value.bc_amnt = balance.get('amount')
 
                 values.append(value)
 

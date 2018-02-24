@@ -78,7 +78,7 @@ class QuoinexWelder:
 
     def _decimalize(self, data, key):
 
-        value = data.get(key, None)
+        value = data.get(key)
 
         if value is None:
             return None
@@ -96,7 +96,7 @@ class QuoinexWelder:
 
             for product in products:
 
-                if code != product.get('currency_pair_code', None):
+                if code != product.get('currency_pair_code'):
                     continue
 
                 ticker = Ticker()
@@ -148,10 +148,10 @@ class QuoinexWelder:
 
             for product in products:
 
-                if code != product.get('currency_pair_code', None):
+                if code != product.get('currency_pair_code'):
                     continue
 
-                product_id = product.get('id', None)
+                product_id = product.get('id')
 
                 limit = self.__context.get_property(self._ID, 'tx_limit', 100)
 
@@ -218,7 +218,7 @@ class QuoinexWelder:
                 value.bc_acct = AccountType.CASH
                 value.bc_unit = unit
                 value.bc_time = now
-                value.bc_amnt = balance.get('balance', None)
+                value.bc_amnt = balance.get('balance')
 
                 values.append(value)
 

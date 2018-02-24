@@ -65,9 +65,9 @@ class CoincheckWelder:
             ticker.tk_site = self._ID
             ticker.tk_code = code
             ticker.tk_time = now
-            ticker.tk_ask = value.get('ask', None)
-            ticker.tk_bid = value.get('bid', None)
-            ticker.tk_ltp = value.get('last', None)
+            ticker.tk_ask = value.get('ask')
+            ticker.tk_bid = value.get('bid')
+            ticker.tk_ltp = value.get('last')
 
             self.__context.save_tickers([ticker])
 

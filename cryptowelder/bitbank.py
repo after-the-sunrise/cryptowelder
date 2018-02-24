@@ -12,7 +12,6 @@ from cryptowelder.context import CryptowelderContext, Ticker, Transaction, Balan
 
 class BitbankWelder:
     _ID = 'bitbank'
-    _ZERO = Decimal('0')
     _SIDE = {'buy': Decimal('+1'), 'sell': Decimal('-1')}
 
     def __init__(self, context):
@@ -75,9 +74,9 @@ class BitbankWelder:
             ticker.tk_site = self._ID
             ticker.tk_code = pair
             ticker.tk_time = now
-            ticker.tk_ask = data.get('sell', None)
-            ticker.tk_bid = data.get('buy', None)
-            ticker.tk_ltp = data.get('last', None)
+            ticker.tk_ask = data.get('sell')
+            ticker.tk_bid = data.get('buy')
+            ticker.tk_ltp = data.get('last')
 
             self.__context.save_tickers([ticker])
 
@@ -132,6 +131,9 @@ class BitbankWelder:
 
                 response = self._query_private('/user/spot/trade_history?' + parse.urlencode(headers))
 
+                if response is None:
+                    break
+
                 if response.get('success', 1) != 1:
                     raise Exception(str(response))
 
@@ -153,7 +155,7 @@ class BitbankWelder:
                     values.append(value)
 
                 self.__logger.debug('Transactions : %s - fetched=[%s] end=[%s]',
-                                    pair, len(values), headers.get('end', None))
+                                    pair, len(values), headers.get('end'))
 
                 results = self.__context.save_transactions(values)
 
@@ -174,6 +176,9 @@ class BitbankWelder:
 
             response = self._query_private('/v1/user/assets')
 
+            if response is None:
+                return
+
             if response.get('success', 1) != 1:
                 raise Exception(str(response))
 
@@ -181,7 +186,7 @@ class BitbankWelder:
 
             for asset in response.get('data', {}).get('assets', {}):
 
-                ccy = asset.get('asset', None)
+                ccy = asset.get('asset')
 
                 try:
                     unit = UnitType[ccy.upper()]
@@ -193,7 +198,7 @@ class BitbankWelder:
                 value.bc_acct = AccountType.CASH
                 value.bc_unit = unit
                 value.bc_time = now
-                value.bc_amnt = asset.get('onhand_amount', None)
+                value.bc_amnt = asset.get('onhand_amount')
 
                 values.append(value)
 
