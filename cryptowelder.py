@@ -10,6 +10,7 @@ def main():
     cryptowelder.BitbankWelder(context).run()
     cryptowelder.BitflyerWelder(context).run()
     cryptowelder.BtcboxWelder(context).run()
+    cryptowelder.CoincheckWelder(context).run()
     cryptowelder.QuoinexWelder(context).run()
 
 
