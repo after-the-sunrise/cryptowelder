@@ -8,6 +8,7 @@ def main():
     context.launch_prometheus()
 
     cryptowelder.BitbankWelder(context).run()
+    cryptowelder.BitfinexWelder(context).run()
     cryptowelder.BitflyerWelder(context).run()
     cryptowelder.BtcboxWelder(context).run()
     cryptowelder.CoincheckWelder(context).run()
