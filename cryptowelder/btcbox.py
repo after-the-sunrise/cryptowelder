@@ -63,9 +63,9 @@ class BtcboxWelder:
             ticker.tk_site = self._ID
             ticker.tk_code = coin
             ticker.tk_time = now
-            ticker.tk_ask = value.get('sell', None)
-            ticker.tk_bid = value.get('buy', None)
-            ticker.tk_ltp = value.get('last', None)
+            ticker.tk_ask = value.get('sell')
+            ticker.tk_bid = value.get('buy')
+            ticker.tk_ltp = value.get('last')
 
             self.__context.save_tickers([ticker])
 
@@ -119,7 +119,7 @@ class BtcboxWelder:
             balance = self._query_private('/api/v1/balance')
 
             if not balance.get('result', True):
-                raise Exception('Code : %s' % balance.get('code', None))
+                raise Exception('Code : %s' % balance.get('code'))
 
             values = []
 
