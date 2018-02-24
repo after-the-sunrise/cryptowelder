@@ -6,6 +6,7 @@ from cryptowelder import coincheck
 from cryptowelder import context
 from cryptowelder import oanda
 from cryptowelder import quoinex
+from cryptowelder import zaif
 
 Context = context.CryptowelderContext
 
@@ -16,3 +17,4 @@ BtcboxWelder = btcbox.BtcboxWelder
 CoincheckWelder = coincheck.CoincheckWelder
 OandaWelder = oanda.OandaWelder
 QuoinexWelder = quoinex.QuoinexWelder
+ZaifWelder = zaif.ZaifWelder

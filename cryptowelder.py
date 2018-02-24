@@ -14,6 +14,7 @@ def main():
     cryptowelder.CoincheckWelder(context).run()
     cryptowelder.OandaWelder(context).run()
     cryptowelder.QuoinexWelder(context).run()
+    cryptowelder.ZaifWelder(context).run()
 
 
 if __name__ == '__main__':
