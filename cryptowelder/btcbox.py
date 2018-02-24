@@ -118,6 +118,9 @@ class BtcboxWelder:
 
             balance = self._query_private('/api/v1/balance')
 
+            if not balance.get('result', True):
+                raise Exception('Code : %s' % balance.get('code', None))
+
             values = []
 
             for key, val in balance.items():
