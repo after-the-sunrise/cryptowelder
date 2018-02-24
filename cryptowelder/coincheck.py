@@ -1,13 +1,9 @@
-from datetime import datetime
 from decimal import Decimal
 from hashlib import sha256
 from hmac import new
-from re import compile
 from threading import Thread, Lock
 from time import sleep
 from urllib.parse import urlencode
-
-from pytz import utc
 
 from cryptowelder.context import CryptowelderContext, Ticker, Balance, AccountType, UnitType, Transaction, \
     TransactionType
@@ -15,9 +11,6 @@ from cryptowelder.context import CryptowelderContext, Ticker, Balance, AccountTy
 
 class CoincheckWelder:
     _ID = 'coincheck'
-
-    # "yyyy-MM-ddTHH:mm:ss", "yyyy-MM-ddTHH:mm:ss.SSS", "yyyy-MM-ddTHH:mm:ss.SSSZ"
-    _TIMEFMT = compile('^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]+)?Z?$')
 
     def __init__(self, context):
         self.__context = context
@@ -110,19 +103,6 @@ class CoincheckWelder:
 
             return self.__context.requests_get(self.__endpoint + path, headers=headers)
 
-    def _parse_timestamp(self, value):
-
-        if value is None or not self._TIMEFMT.match(value):
-            return None
-
-        # 01234567890123456789012
-        # yyyy-MM-ddTHH:mm:ss.SSS
-        stripped = value[:19]
-
-        local = datetime.strptime(stripped, '%Y-%m-%dT%H:%M:%S')
-
-        return local.replace(tzinfo=utc)
-
     def _process_transaction(self, *, limit=100):
 
         try:
@@ -159,7 +139,7 @@ class CoincheckWelder:
                     value.tx_type = TransactionType.TRADE
                     value.tx_oid = str(execution.get('order_id'))
                     value.tx_eid = str(execution.get('id'))
-                    value.tx_time = self._parse_timestamp(execution.get('created_at'))
+                    value.tx_time = self.__context.parse_iso_timestamp(execution.get('created_at'))
                     value.tx_inst = execution.get('funds').get('btc')
                     value.tx_fund = execution.get('funds').get('jpy')
 

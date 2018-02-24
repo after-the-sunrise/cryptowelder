@@ -81,6 +81,30 @@ class TestCryptowelderContext(TestCase):
     def test_get_now(self):
         self.assertIsNotNone(self.target.get_now())
 
+    def test_parse_iso_timestamp(self):
+        result = self.target.parse_iso_timestamp('2017-04-14T12:34:56.789')
+        self.assertIsNotNone(result)
+        self.assertEqual(2017, result.year)
+        self.assertEqual(4, result.month)
+        self.assertEqual(14, result.day)
+        self.assertEqual(12, result.hour)
+        self.assertEqual(34, result.minute)
+        self.assertEqual(56, result.second)
+        self.assertEqual(0, result.microsecond)
+        self.assertEqual('UTC', result.tzname())
+
+        # Various Formats
+        self.assertEqual(result, self.target.parse_iso_timestamp('2017-04-14T12:34:56'))
+        self.assertEqual(result, self.target.parse_iso_timestamp('2017-04-14T12:34:56Z'))
+        self.assertEqual(result, self.target.parse_iso_timestamp('2017-04-14T12:34:56.789123'))
+        self.assertEqual(result, self.target.parse_iso_timestamp('2017-04-14T12:34:56.789123Z'))
+
+        # Invalid Formats
+        self.assertIsNone(self.target.parse_iso_timestamp('2017-04-14T12:34'))
+        self.assertIsNone(self.target.parse_iso_timestamp('2017-04-14T12:34Z'))
+        self.assertIsNone(self.target.parse_iso_timestamp(''))
+        self.assertIsNone(self.target.parse_iso_timestamp(None))
+
     def test_launch_prometheus(self):
         method = MagicMock()
 

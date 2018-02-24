@@ -14,6 +14,7 @@ class TestBitflyerWelder(TestCase):
         self.context = MagicMock()
         self.context.get_logger.return_value = MagicMock()
         self.context.get_property = lambda section, key, val: val
+        self.context.parse_iso_timestamp = CryptowelderContext._parse_iso_timestamp
 
         self.target = BitflyerWelder(self.context)
 
@@ -177,30 +178,6 @@ class TestBitflyerWelder(TestCase):
         self.assertIsNone(self.target._parse_expiry('BTCJPY14APR****'))
         self.assertIsNone(self.target._parse_expiry(''))
         self.assertIsNone(self.target._parse_expiry(None))
-
-    def test__parse_timestamp(self):
-        result = self.target._parse_timestamp('2017-04-14T12:34:56.789')
-        self.assertIsNotNone(result)
-        self.assertEqual(2017, result.year)
-        self.assertEqual(4, result.month)
-        self.assertEqual(14, result.day)
-        self.assertEqual(12, result.hour)
-        self.assertEqual(34, result.minute)
-        self.assertEqual(56, result.second)
-        self.assertEqual(0, result.microsecond)
-        self.assertEqual('UTC', result.tzname())
-
-        # Various Formats
-        self.assertEqual(result, self.target._parse_timestamp('2017-04-14T12:34:56'))
-        self.assertEqual(result, self.target._parse_timestamp('2017-04-14T12:34:56Z'))
-        self.assertEqual(result, self.target._parse_timestamp('2017-04-14T12:34:56.789123'))
-        self.assertEqual(result, self.target._parse_timestamp('2017-04-14T12:34:56.789123Z'))
-
-        # Invalid Formats
-        self.assertIsNone(self.target._parse_timestamp('2017-04-14T12:34'))
-        self.assertIsNone(self.target._parse_timestamp('2017-04-14T12:34Z'))
-        self.assertIsNone(self.target._parse_timestamp(''))
-        self.assertIsNone(self.target._parse_timestamp(None))
 
     def test__query_private(self):
         now = datetime.fromtimestamp(1234567890)
@@ -371,7 +348,7 @@ class TestBitflyerWelder(TestCase):
                 "available": 508000
               },
               {
-                "currency_code": "ETH",
+                "currency_code": "FOO",
                 "amount": 20.48,
                 "available": 16.38
               },

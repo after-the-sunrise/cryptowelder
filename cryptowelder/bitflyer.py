@@ -17,9 +17,6 @@ class BitflyerWelder:
     _ZERO = Decimal('0')
     _SIDE = {'BUY': Decimal('+1'), 'SELL': Decimal('-1')}
 
-    # "yyyy-MM-ddTHH:mm:ss", "yyyy-MM-ddTHH:mm:ss.SSS", "yyyy-MM-ddTHH:mm:ss.SSSZ"
-    _TIMEFMT = compile('^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]+)?Z?$')
-
     # "BTCJPYddMMMyyyy"
     _FUTURES = compile('^[A-Z]{6}[0-9]{2}[A-Z]{3}[0-9]{4}$')
     _MONTHS = {value: i for i, value in enumerate(
@@ -118,7 +115,7 @@ class BitflyerWelder:
                 json = self.__context.requests_get(self.__endpoint + '/v1/ticker?product_code=' + code)
                 json = json if json is not None else {}
 
-                ticker.tk_time = self._parse_timestamp(json.get('timestamp', None))
+                ticker.tk_time = self.__context.parse_iso_timestamp(json.get('timestamp', None))
                 ticker.tk_ask = json.get('best_ask', None)
                 ticker.tk_bid = json.get('best_bid', None)
                 ticker.tk_ltp = json.get('ltp', None)
@@ -164,19 +161,6 @@ class BitflyerWelder:
 
         # "Asia/Tokyo" is 19 minutes off.
         return datetime(year=y, month=m, day=d, hour=16 - 9, minute=0, tzinfo=utc)
-
-    def _parse_timestamp(self, value):
-
-        if value is None or not self._TIMEFMT.match(value):
-            return None
-
-        # 01234567890123456789012
-        # yyyy-MM-ddTHH:mm:ss.SSS
-        stripped = value[:19]
-
-        local = datetime.strptime(stripped, '%Y-%m-%dT%H:%M:%S')
-
-        return local.replace(tzinfo=utc)
 
     def _query_private(self, path):
 
@@ -277,7 +261,7 @@ class BitflyerWelder:
                     value.tx_type = TransactionType.TRADE
                     value.tx_oid = exec_od
                     value.tx_eid = str(exec_id)
-                    value.tx_time = self._parse_timestamp(exec_ts)
+                    value.tx_time = self.__context.parse_iso_timestamp(exec_ts)
                     value.tx_inst = (exec_in * self._SIDE[exec_sd]) - exec_cm
                     value.tx_fund = (exec_in * self._SIDE[exec_sd]) * exec_px * -1
 

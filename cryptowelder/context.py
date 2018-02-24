@@ -6,6 +6,7 @@ from json import loads
 from logging import Formatter, StreamHandler, DEBUG, INFO, getLogger
 from logging.handlers import TimedRotatingFileHandler, BufferingHandler
 from os import path
+from re import compile
 from time import sleep
 
 import prometheus_client
@@ -20,6 +21,7 @@ class CryptowelderContext:
     SECTION = 'context'
     TIMEZONE = timezone("Asia/Tokyo")
     ENTITY_BASE = declarative_base()
+    TIMEFMT = compile('^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]+)?Z?$')
 
     def __init__(self, *, config=None, read_only=True, debug=True):
         # Read-only for testing
@@ -90,6 +92,23 @@ class CryptowelderContext:
 
     def get_now(self):
         return datetime.now(tz=utc)
+
+    def parse_iso_timestamp(self, value):
+        return self._parse_iso_timestamp(value)
+
+    @classmethod
+    def _parse_iso_timestamp(cls, value):
+
+        if value is None or not cls.TIMEFMT.match(value):
+            return None
+
+        # 01234567890123456789012
+        # yyyy-MM-ddTHH:mm:ss.SSS
+        stripped = value[:19]
+
+        local = datetime.strptime(stripped, '%Y-%m-%dT%H:%M:%S')
+
+        return local.replace(tzinfo=utc)
 
     def launch_prometheus(self, *, method=prometheus_client.start_http_server):
 
