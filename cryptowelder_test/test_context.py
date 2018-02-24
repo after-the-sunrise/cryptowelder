@@ -113,8 +113,8 @@ class TestCryptowelderContext(TestCase):
         method.assert_called_with(20000, addr='localhost')
 
         # Custom host:port
-        self.target.set_property(self.target.SECTION, 'prometheus_host', '127.0.0.1')
-        self.target.set_property(self.target.SECTION, 'prometheus_port', '65535')
+        self.target.set_property(self.target._SECTION, 'prometheus_host', '127.0.0.1')
+        self.target.set_property(self.target._SECTION, 'prometheus_port', '65535')
         self.target.launch_prometheus(method=method)
         method.assert_called_with(65535, addr='127.0.0.1')
 
@@ -136,15 +136,15 @@ class TestCryptowelderContext(TestCase):
         self.assertEqual(result['flg'], True)
 
     def test__request_ClientError(self):
-        self.target.set_property(self.target.SECTION, 'request_retry', '3')
-        self.target.set_property(self.target.SECTION, 'request_sleep', '0.001')
+        self.target.set_property(self.target._SECTION, 'request_retry', '3')
+        self.target.set_property(self.target._SECTION, 'request_sleep', '0.001')
         TestHander.init(status=404)
         result = self.target._request(lambda: get("http://localhost:65535"))
         self.assertIsNone(result)
 
     def test__request_ServerError(self):
-        self.target.set_property(self.target.SECTION, 'request_retry', '3')
-        self.target.set_property(self.target.SECTION, 'request_sleep', '0.001')
+        self.target.set_property(self.target._SECTION, 'request_retry', '3')
+        self.target.set_property(self.target._SECTION, 'request_sleep', '0.001')
         TestHander.init(status=502)
         result = self.target._request(lambda: get("http://localhost:65535"))
         self.assertIsNone(result)

@@ -18,10 +18,11 @@ from sqlalchemy.orm import sessionmaker, scoped_session
 
 
 class CryptowelderContext:
-    SECTION = 'context'
-    TIMEZONE = timezone("Asia/Tokyo")
     ENTITY_BASE = declarative_base()
-    TIMEFMT = compile('^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]+)?Z?$')
+
+    _SECTION = 'context'
+    _TIMEZONE = timezone("Asia/Tokyo")
+    _FORMAT = compile('^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]+)?Z?$')
 
     def __init__(self, *, config=None, read_only=True, debug=True):
         # Read-only for testing
@@ -31,7 +32,7 @@ class CryptowelderContext:
         self.__config = self._create_config([config])
 
         # Logging
-        logger = self.get_property(self.SECTION, 'log_path', 'logs/cryptowelder.log')
+        logger = self.get_property(self._SECTION, 'log_path', 'logs/cryptowelder.log')
 
         formatter = Formatter('[%(asctime)-15s][%(levelname)-5s][%(name)s] %(message)s')
         self.__stream_handler = StreamHandler()
@@ -39,8 +40,8 @@ class CryptowelderContext:
         self.__stream_handler.setLevel(DEBUG if debug else INFO)
         self.__rotate_handler = TimedRotatingFileHandler(
             logger,
-            when=self.get_property(self.SECTION, 'log_roll', 'D'),
-            backupCount=int(self.get_property(self.SECTION, 'log_bkup', 7))
+            when=self.get_property(self._SECTION, 'log_roll', 'D'),
+            backupCount=int(self.get_property(self._SECTION, 'log_bkup', 7))
         ) if path.exists(path.dirname(logger)) else BufferingHandler(64)
         self.__rotate_handler.setFormatter(formatter)
         self.__rotate_handler.setLevel(DEBUG)
@@ -49,7 +50,7 @@ class CryptowelderContext:
         self.__logger.info('Config : %s', config)
 
         # Database
-        database = self.get_property(self.SECTION, 'database', 'sqlite:///:memory:')
+        database = self.get_property(self._SECTION, 'database', 'sqlite:///:memory:')
         self.__engine = create_engine(database)
         self.__session = scoped_session(sessionmaker(bind=self.__engine))
         self.__logger.info('Database : %s (read_only=%s)', database, read_only)
@@ -88,7 +89,7 @@ class CryptowelderContext:
         return logger
 
     def is_closed(self):
-        return self.get_property(self.SECTION, 'closed', None) is not None
+        return self.get_property(self._SECTION, 'closed', None) is not None
 
     def get_now(self):
         return datetime.now(tz=utc)
@@ -99,7 +100,7 @@ class CryptowelderContext:
     @classmethod
     def _parse_iso_timestamp(cls, value):
 
-        if value is None or not cls.TIMEFMT.match(value):
+        if value is None or not cls._FORMAT.match(value):
             return None
 
         # 01234567890123456789012
@@ -112,8 +113,8 @@ class CryptowelderContext:
 
     def launch_prometheus(self, *, method=prometheus_client.start_http_server):
 
-        host = self.get_property(self.SECTION, 'prometheus_host', 'localhost')
-        port = self.get_property(self.SECTION, 'prometheus_port', '20000')
+        host = self.get_property(self._SECTION, 'prometheus_host', 'localhost')
+        port = self.get_property(self._SECTION, 'prometheus_port', '20000')
         self.get_logger(self).info('Prometheus : %s:%s', host, port)
 
         method(int(port), addr=host)
@@ -124,7 +125,7 @@ class CryptowelderContext:
 
     def _request(self, method):
 
-        attempt = int(self.get_property(self.SECTION, "request_retry", 1)) + 1
+        attempt = int(self.get_property(self._SECTION, "request_retry", 1)) + 1
 
         result = None
 
@@ -156,7 +157,7 @@ class CryptowelderContext:
 
                 self.__logger.debug('%s : %s', type(e), e.args)
 
-                sleep(float(self.get_property(self.SECTION, "request_sleep", 1.0)))
+                sleep(float(self.get_property(self._SECTION, "request_sleep", 1.0)))
 
         else:
 
@@ -179,7 +180,7 @@ class CryptowelderContext:
             hour=source.hour,
             minute=source.minute,
             tzinfo=source.tzinfo
-        ).astimezone(self.TIMEZONE)
+        ).astimezone(self._TIMEZONE)
 
     def _create_all(self):
         self.ENTITY_BASE.metadata.create_all(bind=self.__engine)
@@ -351,7 +352,7 @@ class CryptowelderContext:
                 truncated.tx_type = t.tx_type
                 truncated.tx_oid = t.tx_oid
                 truncated.tx_eid = t.tx_eid
-                truncated.tx_time = t.tx_time.astimezone(self.TIMEZONE)
+                truncated.tx_time = t.tx_time.astimezone(self._TIMEZONE)
                 truncated.tx_inst = t.tx_inst
                 truncated.tx_fund = t.tx_fund
 
