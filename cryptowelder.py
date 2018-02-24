@@ -13,6 +13,7 @@ def main():
     cryptowelder.BtcboxWelder(context).run()
     cryptowelder.CoincheckWelder(context).run()
     cryptowelder.OandaWelder(context).run()
+    cryptowelder.PoloniexWelder(context).run()
     cryptowelder.QuoinexWelder(context).run()
     cryptowelder.ZaifWelder(context).run()
 
