@@ -361,6 +361,9 @@ class UnitType(Enum):
     JPY = auto()
     USD = auto()
     BTC = auto()
+    BCH = auto()
+    ETH = auto()
+    ETC = auto()
 
 
 class TransactionType(Enum):
