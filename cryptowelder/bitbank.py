@@ -53,7 +53,7 @@ class BitbankWelder:
             for t in threads:
                 t.join()
 
-            sleep(self.__context.get_property(self._ID, 'interval', 15))
+            sleep(float(self.__context.get_property(self._ID, 'interval', 15)))
 
         self.__logger.info('Terminated.')
 

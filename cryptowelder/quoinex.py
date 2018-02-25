@@ -46,7 +46,7 @@ class QuoinexWelder:
             for t in threads:
                 t.join()
 
-            sleep(self.__context.get_property(self._ID, 'interval', 15))
+            sleep(float(self.__context.get_property(self._ID, 'interval', 15)))
 
         self.__logger.info('Terminated.')
 
@@ -153,7 +153,7 @@ class QuoinexWelder:
 
                 product_id = product.get('id')
 
-                limit = self.__context.get_property(self._ID, 'tx_limit', 100)
+                limit = int(self.__context.get_property(self._ID, 'tx_limit', 100))
 
                 page = 1
 
