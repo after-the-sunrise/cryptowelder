@@ -1,4 +1,3 @@
-from datetime import datetime
 from decimal import Decimal
 from threading import Thread, Lock
 from time import sleep
@@ -175,7 +174,7 @@ class QuoinexWelder:
                         value.tx_type = TransactionType.TRADE
                         value.tx_oid = str(execution.get('id')) + '@' + execution.get('my_side')
                         value.tx_eid = str(execution.get('id'))
-                        value.tx_time = datetime.utcfromtimestamp(execution.get('created_at'))
+                        value.tx_time = self.__context.parse_iso_timestamp(execution.get('created_at'))
                         value.tx_inst = self._decimalize(execution, 'quantity') * self._SIDE[execution.get('my_side')]
                         value.tx_fund = self._decimalize(execution, 'price') * value.tx_inst * -1
 

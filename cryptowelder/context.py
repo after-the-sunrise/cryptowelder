@@ -22,7 +22,8 @@ class CryptowelderContext:
 
     _SECTION = 'context'
     _TIMEZONE = timezone("Asia/Tokyo")
-    _FORMAT = compile('^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]+)?Z?$')
+    _FORMAT_ISO = compile('^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]+)?Z?$')
+    _FORMAT_UNX = compile('^[0-9]+(\\.[0-9]+)?$')
 
     def __init__(self, *, config=None, read_only=True, debug=True):
         # Read-only for testing
@@ -100,16 +101,26 @@ class CryptowelderContext:
     @classmethod
     def _parse_iso_timestamp(cls, value):
 
-        if value is None or not cls._FORMAT.match(value):
+        if value is None:
             return None
 
-        # 01234567890123456789012
-        # yyyy-MM-ddTHH:mm:ss.SSS
-        stripped = value[:19]
+        if isinstance(value, str):
 
-        local = datetime.strptime(stripped, '%Y-%m-%dT%H:%M:%S')
+            if cls._FORMAT_UNX.match(value):
+                return datetime.fromtimestamp(float(value), tz=utc)
 
-        return local.replace(tzinfo=utc)
+            if cls._FORMAT_ISO.match(value):
+                # 01234567890123456789012
+                # yyyy-MM-ddTHH:mm:ss.SSS
+                stripped = value[:19]
+
+                local = datetime.strptime(stripped, '%Y-%m-%dT%H:%M:%S')
+
+                return local.replace(tzinfo=utc)
+
+            return None
+
+        return datetime.fromtimestamp(float(value), tz=utc)
 
     def launch_prometheus(self, *, method=prometheus_client.start_http_server):
 

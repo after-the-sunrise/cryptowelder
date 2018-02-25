@@ -1,4 +1,3 @@
-from datetime import datetime
 from threading import Thread
 from time import sleep
 
@@ -54,7 +53,7 @@ class BitfinexWelder:
             ticker = Ticker()
             ticker.tk_site = self._ID
             ticker.tk_code = code
-            ticker.tk_time = datetime.utcfromtimestamp(float(response.get('timestamp')))
+            ticker.tk_time = self.__context.parse_iso_timestamp(response.get('timestamp'))
             ticker.tk_ask = response.get('ask')
             ticker.tk_bid = response.get('bid')
             ticker.tk_ltp = response.get('last_price')

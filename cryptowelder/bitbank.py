@@ -1,4 +1,3 @@
-from datetime import datetime
 from decimal import Decimal
 from hashlib import sha256
 from hmac import new
@@ -148,7 +147,7 @@ class BitbankWelder:
                     value.tx_type = TransactionType.TRADE
                     value.tx_oid = str(trade.get('order_id'))
                     value.tx_eid = str(trade.get('trade_id'))
-                    value.tx_time = datetime.utcfromtimestamp(trade.get('executed_at'))
+                    value.tx_time = self.__context.parse_iso_timestamp(trade.get('executed_at'))
                     value.tx_inst = Decimal(trade.get('amount')) * self._SIDE[trade.get('side')]
                     value.tx_fund = Decimal(trade.get('price')) * value.tx_inst * -1
 

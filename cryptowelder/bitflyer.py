@@ -159,7 +159,7 @@ class BitflyerWelder:
         if m is None:
             return None
 
-        # "Asia/Tokyo" is 19 minutes off.
+        # Avoid using "Asia/Tokyo", pytz (2018.3) is 19 minutes off.
         return datetime(year=y, month=m, day=d, hour=16 - 9, minute=0, tzinfo=utc)
 
     def _query_private(self, path):

@@ -83,6 +83,40 @@ class TestCryptowelderContext(TestCase):
         self.assertIsNotNone(self.target.get_now())
 
     def test_parse_iso_timestamp(self):
+        # Unix Time
+        result = self.target.parse_iso_timestamp('1234567890')
+        self.assertIsNotNone(result)
+        self.assertEqual(2009, result.year)
+        self.assertEqual(2, result.month)
+        self.assertEqual(13, result.day)
+        self.assertEqual(23, result.hour)
+        self.assertEqual(31, result.minute)
+        self.assertEqual(30, result.second)
+        self.assertEqual(0, result.microsecond)
+        self.assertEqual('UTC', result.tzname())
+
+        # Unix Time - Various Types
+        self.assertEqual(result, self.target.parse_iso_timestamp(1234567890))
+        self.assertEqual(result, self.target.parse_iso_timestamp(1234567890.0))
+        self.assertEqual(result, self.target.parse_iso_timestamp(Decimal('1234567890.0')))
+
+        # Unix Time with Decimal
+        result = self.target.parse_iso_timestamp('1234567890.123456')
+        self.assertIsNotNone(result)
+        self.assertEqual(2009, result.year)
+        self.assertEqual(2, result.month)
+        self.assertEqual(13, result.day)
+        self.assertEqual(23, result.hour)
+        self.assertEqual(31, result.minute)
+        self.assertEqual(30, result.second)
+        self.assertEqual(123456, result.microsecond)
+        self.assertEqual('UTC', result.tzname())
+
+        # Unix Time - Various Types
+        self.assertEqual(result, self.target.parse_iso_timestamp(1234567890.123456))
+        self.assertEqual(result, self.target.parse_iso_timestamp(Decimal('1234567890.123456')))
+
+        # ISO
         result = self.target.parse_iso_timestamp('2017-04-14T12:34:56.789')
         self.assertIsNotNone(result)
         self.assertEqual(2017, result.year)
@@ -94,13 +128,13 @@ class TestCryptowelderContext(TestCase):
         self.assertEqual(0, result.microsecond)
         self.assertEqual('UTC', result.tzname())
 
-        # Various Formats
+        # ISO - Various Formats
         self.assertEqual(result, self.target.parse_iso_timestamp('2017-04-14T12:34:56'))
         self.assertEqual(result, self.target.parse_iso_timestamp('2017-04-14T12:34:56Z'))
         self.assertEqual(result, self.target.parse_iso_timestamp('2017-04-14T12:34:56.789123'))
         self.assertEqual(result, self.target.parse_iso_timestamp('2017-04-14T12:34:56.789123Z'))
 
-        # Invalid Formats
+        # ISO - Invalid Formats
         self.assertIsNone(self.target.parse_iso_timestamp('2017-04-14T12:34'))
         self.assertIsNone(self.target.parse_iso_timestamp('2017-04-14T12:34Z'))
         self.assertIsNone(self.target.parse_iso_timestamp(''))
