@@ -9,6 +9,7 @@ from time import sleep
 from unittest import TestCase, main
 from unittest.mock import MagicMock
 
+from pytz import utc
 from requests import get
 
 from cryptowelder.context import CryptowelderContext, Transaction, Ticker, Balance, Position, AccountType, UnitType, \
@@ -160,6 +161,18 @@ class TestCryptowelderContext(TestCase):
         self.target._request = MagicMock(return_value=response)
         self.assertEqual(self.target.requests_post('http://localhost:65535'), response)
         self.target._request.assert_called_once()
+
+    def test__truncate_datetime(self):
+        dt = datetime(year=2017, month=4, day=14, hour=12, minute=34, second=56, microsecond=789123, tzinfo=utc)
+        result = self.target._truncate_datetime(dt)
+        self.assertEqual(2017, result.year)
+        self.assertEqual(4, result.month)
+        self.assertEqual(14, result.day)
+        self.assertEqual(21, result.hour)
+        self.assertEqual(34, result.minute)
+        self.assertEqual(0, result.second)
+        self.assertEqual(0, result.microsecond)
+        self.assertEqual('JST', result.tzname())
 
     def test_save_tickers(self):
         self.target._create_all()
