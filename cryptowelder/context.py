@@ -21,7 +21,6 @@ class CryptowelderContext:
     ENTITY_BASE = declarative_base()
 
     _SECTION = 'context'
-    _TIMEZONE = timezone("Asia/Tokyo")
     _FORMAT_ISO = compile('^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]+)?Z?$')
     _FORMAT_UNX = compile('^[0-9]+(\\.[0-9]+)?$')
 
@@ -49,6 +48,10 @@ class CryptowelderContext:
         self.__logger = self.get_logger(self)
         self.__logger.info('Logger : %s', logger)
         self.__logger.info('Config : %s', config)
+
+        # Timezone
+        self.__timezone = timezone(self.get_property(self._SECTION, 'timezone', 'Asia/Tokyo'))
+        self.__logger.info('Timezone : %s', self.__timezone)
 
         # Database
         database = self.get_property(self._SECTION, 'database', 'sqlite:///:memory:')
@@ -191,7 +194,7 @@ class CryptowelderContext:
             hour=source.hour,
             minute=source.minute,
             tzinfo=source.tzinfo
-        ).astimezone(self._TIMEZONE)
+        ).astimezone(self.__timezone)
 
     def _create_all(self):
         self.ENTITY_BASE.metadata.create_all(bind=self.__engine)
@@ -363,7 +366,7 @@ class CryptowelderContext:
                 truncated.tx_type = t.tx_type
                 truncated.tx_oid = t.tx_oid
                 truncated.tx_eid = t.tx_eid
-                truncated.tx_time = t.tx_time.astimezone(self._TIMEZONE)
+                truncated.tx_time = t.tx_time.astimezone(self.__timezone)
                 truncated.tx_inst = t.tx_inst
                 truncated.tx_fund = t.tx_fund
 
