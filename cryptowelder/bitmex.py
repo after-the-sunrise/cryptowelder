@@ -13,7 +13,7 @@ from cryptowelder.context import CryptowelderContext, Ticker, Balance, AccountTy
 class BitmexWelder:
     _ID = 'bitmex'
     _SIDE = {'Buy': Decimal('+1'), 'Sell': Decimal('-1')}
-    _SATOSHI = 0.00000001
+    _SATOSHI = Decimal('0.00000001')
 
     def __init__(self, context):
         self.__context = context
