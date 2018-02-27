@@ -100,9 +100,7 @@ CREATE VIEW v_balance AS
         AND
         t2.tk_code = e.ev_convert_code
         AND
-        t2.tk_time = b.bc_time
-  WHERE
-    b.bc_time < date_trunc('minute', now());
+        t2.tk_time = b.bc_time;
 
 --
 -- Position with funding amount converted to evaluation unit.
@@ -159,9 +157,7 @@ CREATE VIEW v_position AS
       pr.pr_expr IS NULL
       OR
       pr.pr_expr < ps.ps_time
-    )
-    AND
-    ps.ps_time < date_trunc('minute', now());
+    );
 
 --
 -- Shortcut for Grafana to fetch all assets in evaluation unit.
@@ -170,19 +166,24 @@ CREATE VIEW v_position AS
 -- SELECT time, 'Total' as metric, SUM(amount) FROM v_asset WHERE $__timeFilter(time) GROUP BY time ORDER BY time
 --
 CREATE VIEW v_asset AS
-  SELECT
-    bc_time AS "time",
-    ev_disp AS "metric",
-    amount
+  SELECT *
   FROM
-    v_balance
-  UNION
-  SELECT
-    ps_time AS "time",
-    pr_disp AS "metric",
-    amount
-  FROM
-    v_position;
+    (SELECT
+       bc_time AS "time",
+       ev_disp AS "metric",
+       amount
+     FROM
+       v_balance
+     UNION
+     SELECT
+       ps_time AS "time",
+       pr_disp AS "metric",
+       amount
+     FROM
+       v_position
+    ) AS t
+  WHERE
+    t.time < date_trunc('minute', now());
 
 --
 -- Cash amount ratio of BTC / JPY.
