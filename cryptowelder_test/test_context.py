@@ -197,13 +197,48 @@ class TestCryptowelderContext(TestCase):
         self.target._request.assert_called_once()
 
     def test__truncate_datetime(self):
+        # Arbitrary Time
         dt = datetime(year=2017, month=4, day=14, hour=12, minute=34, second=56, microsecond=789123, tzinfo=utc)
         result = self.target._truncate_datetime(dt)
         self.assertEqual(2017, result.year)
         self.assertEqual(4, result.month)
         self.assertEqual(14, result.day)
         self.assertEqual(12, result.hour)
-        self.assertEqual(34, result.minute)
+        self.assertEqual(35, result.minute)  # Round UP
+        self.assertEqual(0, result.second)
+        self.assertEqual(0, result.microsecond)
+        self.assertEqual('UTC', result.tzname())
+
+        # On boundary
+        dt = datetime(year=2017, month=4, day=14, hour=12, minute=34, second=0, microsecond=0, tzinfo=utc)
+        result = self.target._truncate_datetime(dt)
+        self.assertEqual(2017, result.year)
+        self.assertEqual(4, result.month)
+        self.assertEqual(14, result.day)
+        self.assertEqual(12, result.hour)
+        self.assertEqual(34, result.minute)  # Round NONE
+        self.assertEqual(0, result.second)
+        self.assertEqual(0, result.microsecond)
+        self.assertEqual('UTC', result.tzname())
+
+        # On boundary + 1 micro
+        result = self.target._truncate_datetime(dt + timedelta(microseconds=1))
+        self.assertEqual(2017, result.year)
+        self.assertEqual(4, result.month)
+        self.assertEqual(14, result.day)
+        self.assertEqual(12, result.hour)
+        self.assertEqual(35, result.minute)  # Round UP
+        self.assertEqual(0, result.second)
+        self.assertEqual(0, result.microsecond)
+        self.assertEqual('UTC', result.tzname())
+
+        # On boundary - 1 micro
+        result = self.target._truncate_datetime(dt - timedelta(microseconds=1))
+        self.assertEqual(2017, result.year)
+        self.assertEqual(4, result.month)
+        self.assertEqual(14, result.day)
+        self.assertEqual(12, result.hour)
+        self.assertEqual(34, result.minute)  # Round UP
         self.assertEqual(0, result.second)
         self.assertEqual(0, result.microsecond)
         self.assertEqual('UTC', result.tzname())

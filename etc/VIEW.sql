@@ -166,24 +166,19 @@ CREATE VIEW v_position AS
 -- SELECT time, 'Total' as metric, SUM(amount) FROM v_asset WHERE $__timeFilter(time) GROUP BY time ORDER BY time
 --
 CREATE VIEW v_asset AS
-  SELECT *
+  SELECT
+    bc_time AS "time",
+    ev_disp AS "metric",
+    amount
   FROM
-    (SELECT
-       bc_time AS "time",
-       ev_disp AS "metric",
-       amount
-     FROM
-       v_balance
-     UNION
-     SELECT
-       ps_time AS "time",
-       pr_disp AS "metric",
-       amount
-     FROM
-       v_position
-    ) AS t
-  WHERE
-    t.time < date_trunc('minute', now());
+    v_balance
+  UNION
+  SELECT
+    ps_time AS "time",
+    pr_disp AS "metric",
+    amount
+  FROM
+    v_position;
 
 --
 -- Cash amount ratio of BTC / JPY.

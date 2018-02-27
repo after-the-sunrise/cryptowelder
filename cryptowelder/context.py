@@ -1,5 +1,5 @@
 from configparser import ConfigParser
-from datetime import datetime
+from datetime import datetime, timedelta
 from decimal import Decimal
 from enum import auto, Enum
 from json import loads
@@ -179,13 +179,15 @@ class CryptowelderContext:
 
     def _truncate_datetime(self, source):
 
+        forward = source + timedelta(seconds=59, microseconds=999999)
+
         return datetime(
-            year=source.year,
-            month=source.month,
-            day=source.day,
-            hour=source.hour,
-            minute=source.minute,
-            tzinfo=source.tzinfo
+            year=forward.year,
+            month=forward.month,
+            day=forward.day,
+            hour=forward.hour,
+            minute=forward.minute,
+            tzinfo=forward.tzinfo
         ).astimezone(utc)
 
     def _create_all(self):
