@@ -1,4 +1,35 @@
 --
+-- Product
+--
+DROP TABLE IF EXISTS t_product;
+
+CREATE TABLE t_product
+(
+  pr_site VARCHAR(16) NOT NULL,
+  pr_code VARCHAR(32) NOT NULL,
+  pr_inst VARCHAR(16) NOT NULL,
+  pr_fund VARCHAR(16) NOT NULL,
+  pr_disp VARCHAR(16) NOT NULL,
+  pr_expr TIMESTAMP
+);
+
+ALTER TABLE t_product
+  ADD CONSTRAINT t_product_0
+PRIMARY KEY
+  (
+    pr_site,
+    pr_code
+  );
+
+CREATE INDEX t_product_1
+  ON t_product
+  (
+    pr_site,
+    pr_inst,
+    pr_fund
+  );
+
+--
 -- Ticker
 --
 DROP TABLE IF EXISTS t_ticker;
@@ -56,6 +87,32 @@ CREATE INDEX i_balance_1
   ON t_balance
   (
     bc_time
+  );
+
+--
+-- Evaluation
+--
+DROP TABLE IF EXISTS t_evaluation;
+
+CREATE TABLE t_evaluation
+(
+  ev_site         VARCHAR(16) NOT NULL,
+  ev_acct         VARCHAR(16) NOT NULL,
+  ev_unit         VARCHAR(16) NOT NULL,
+  ev_disp         VARCHAR(16) NOT NULL,
+  ev_ticker_site  VARCHAR(16),
+  ev_ticker_code  VARCHAR(32),
+  ev_convert_site VARCHAR(16),
+  ev_convert_code VARCHAR(32)
+);
+
+ALTER TABLE t_evaluation
+  ADD CONSTRAINT t_evaluation_0
+PRIMARY KEY
+  (
+    ev_site,
+    ev_acct,
+    ev_unit
   );
 
 --
