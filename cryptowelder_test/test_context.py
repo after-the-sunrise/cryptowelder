@@ -202,11 +202,11 @@ class TestCryptowelderContext(TestCase):
         self.assertEqual(2017, result.year)
         self.assertEqual(4, result.month)
         self.assertEqual(14, result.day)
-        self.assertEqual(21, result.hour)
+        self.assertEqual(12, result.hour)
         self.assertEqual(34, result.minute)
         self.assertEqual(0, result.second)
         self.assertEqual(0, result.microsecond)
-        self.assertEqual('JST', result.tzname())
+        self.assertEqual('UTC', result.tzname())
 
     def test_save_tickers(self):
         self.target._create_all()

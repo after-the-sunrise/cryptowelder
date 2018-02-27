@@ -10,7 +10,7 @@ from re import compile
 from time import sleep
 
 import prometheus_client
-from pytz import timezone, utc
+from pytz import utc
 from requests import get, post
 from sqlalchemy import create_engine, Column, String, DateTime, Numeric, Enum as Type
 from sqlalchemy.ext.declarative import declarative_base
@@ -48,10 +48,6 @@ class CryptowelderContext:
         self.__logger = self.get_logger(self)
         self.__logger.info('Logger : %s', logger)
         self.__logger.info('Config : %s', config)
-
-        # Timezone
-        self.__timezone = timezone(self.get_property(self._SECTION, 'timezone', 'Asia/Tokyo'))
-        self.__logger.info('Timezone : %s', self.__timezone)
 
         # Database
         database = self.get_property(self._SECTION, 'database', 'sqlite:///:memory:')
@@ -194,7 +190,7 @@ class CryptowelderContext:
             hour=source.hour,
             minute=source.minute,
             tzinfo=source.tzinfo
-        ).astimezone(self.__timezone)
+        ).astimezone(utc)
 
     def _create_all(self):
         self.ENTITY_BASE.metadata.create_all(bind=self.__engine)
@@ -366,7 +362,7 @@ class CryptowelderContext:
                 truncated.tx_type = t.tx_type
                 truncated.tx_oid = t.tx_oid
                 truncated.tx_eid = t.tx_eid
-                truncated.tx_time = t.tx_time.astimezone(self.__timezone)
+                truncated.tx_time = t.tx_time.astimezone(utc)
                 truncated.tx_inst = t.tx_inst
                 truncated.tx_fund = t.tx_fund
 
