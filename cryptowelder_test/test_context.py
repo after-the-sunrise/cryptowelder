@@ -174,14 +174,14 @@ class TestCryptowelderContext(TestCase):
         self.target.set_property(self.target._SECTION, 'request_retry', '3')
         self.target.set_property(self.target._SECTION, 'request_sleep', '0.001')
         TestHander.init(status=404)
-        result = self.target._request(lambda: get("http://localhost:65535"))
+        result = self.target._request(lambda: get("http://localhost:65535"), label='test client')
         self.assertIsNone(result)
 
     def test__request_ServerError(self):
         self.target.set_property(self.target._SECTION, 'request_retry', '3')
         self.target.set_property(self.target._SECTION, 'request_sleep', '0.001')
         TestHander.init(status=502)
-        result = self.target._request(lambda: get("http://localhost:65535"))
+        result = self.target._request(lambda: get("http://localhost:65535"), label='test server')
         self.assertIsNone(result)
 
     def test_requests_get(self):

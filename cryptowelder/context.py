@@ -133,7 +133,7 @@ class CryptowelderContext:
     def _parse(json):
         return loads(json, parse_float=Decimal)
 
-    def _request(self, method):
+    def _request(self, method, *, label='N/A'):
 
         attempt = int(self.get_property(self._SECTION, "request_retry", 1)) + 1
 
@@ -147,9 +147,7 @@ class CryptowelderContext:
 
                     if r.status_code >= 500:  # Server Error
 
-                        url = r.request.url
-
-                        raise Exception(r.status_code, r.reason, r.text, url)
+                        raise Exception(r.status_code, r.reason, label, r.text)
 
                     if r.ok:
 
@@ -157,9 +155,7 @@ class CryptowelderContext:
 
                     else:
 
-                        url = r.request.url
-
-                        self.__logger.warning('[%s:%s] %s - %s', r.status_code, r.reason, r.text, url)
+                        self.__logger.warning('[%s:%s] %s - %s', r.status_code, r.reason, label, r.text)
 
                     break
 
@@ -171,15 +167,15 @@ class CryptowelderContext:
 
         else:
 
-            self.__logger.warning('Request retry exceeded : %s', attempt)
+            self.__logger.warning('Request retry exceeded : %s', label)
 
         return result
 
     def requests_get(self, url, params=None, **kwargs):
-        return self._request(lambda: get(url, params=params, **kwargs))
+        return self._request(lambda: get(url, params=params, **kwargs), label=url)
 
     def requests_post(self, url, data=None, json=None, **kwargs):
-        return self._request(lambda: post(url, data=data, json=json, **kwargs))
+        return self._request(lambda: post(url, data=data, json=json, **kwargs), label=url)
 
     def _truncate_datetime(self, source):
 
