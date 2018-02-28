@@ -218,6 +218,7 @@ class BitmexWelder:
                     value.tx_site = self._ID
                     value.tx_code = execution.get('symbol')
                     value.tx_type = TransactionType.TRADE
+                    value.tx_acct = AccountType.MARGIN
                     value.tx_oid = execution.get('orderID')
                     value.tx_eid = execution.get('execID')
                     value.tx_time = self.__context.parse_iso_timestamp(execution.get('transactTime'))

@@ -172,6 +172,7 @@ class QuoinexWelder:
                         value.tx_site = self._ID
                         value.tx_code = code
                         value.tx_type = TransactionType.TRADE
+                        value.tx_acct = AccountType.CASH
                         value.tx_oid = str(execution.get('id')) + '@' + execution.get('my_side')
                         value.tx_eid = str(execution.get('id'))
                         value.tx_time = self.__context.parse_iso_timestamp(execution.get('created_at'))

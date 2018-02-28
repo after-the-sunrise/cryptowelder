@@ -137,6 +137,7 @@ class CoincheckWelder:
                     value.tx_site = self._ID
                     value.tx_code = execution.get('pair')
                     value.tx_type = TransactionType.TRADE
+                    value.tx_acct = AccountType.CASH
                     value.tx_oid = str(execution.get('order_id'))
                     value.tx_eid = str(execution.get('id'))
                     value.tx_time = self.__context.parse_iso_timestamp(execution.get('created_at'))

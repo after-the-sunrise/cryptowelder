@@ -176,6 +176,7 @@ CREATE TABLE t_transaction
   tx_site VARCHAR(16) NOT NULL,
   tx_code VARCHAR(32) NOT NULL,
   tx_type VARCHAR(16) NOT NULL,
+  tx_acct VARCHAR(16) NOT NULL,
   tx_oid  VARCHAR(64) NOT NULL,
   tx_eid  VARCHAR(64) NOT NULL,
   tx_time TIMESTAMP   NOT NULL,
@@ -190,6 +191,7 @@ PRIMARY KEY
     tx_site,
     tx_code,
     tx_type,
+    tx_acct,
     tx_oid,
     tx_eid
   );
@@ -200,7 +202,8 @@ CREATE INDEX i_transaction_1
     tx_time,
     tx_site,
     tx_code,
-    tx_type
+    tx_type,
+    tx_acct
   );
 
 CREATE INDEX i_transaction_2
@@ -209,5 +212,6 @@ CREATE INDEX i_transaction_2
     extract(EPOCH FROM tx_time),
     tx_site,
     tx_code,
-    tx_type
+    tx_type,
+    tx_acct
   );

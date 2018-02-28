@@ -145,6 +145,7 @@ class BitbankWelder:
                     value.tx_site = self._ID
                     value.tx_code = pair
                     value.tx_type = TransactionType.TRADE
+                    value.tx_acct = AccountType.CASH
                     value.tx_oid = str(trade.get('order_id'))
                     value.tx_eid = str(trade.get('trade_id'))
                     value.tx_time = self.__context.parse_iso_timestamp(trade.get('executed_at'))

@@ -229,6 +229,8 @@ class BitflyerWelder:
 
         try:
 
+            is_cash = 'FX_BTC_JPY' != code and not self.__is_futures(code)
+
             limit = int(self.__context.get_property(self._ID, 'tx_limit', 100))
 
             sequence = None
@@ -259,6 +261,7 @@ class BitflyerWelder:
                     value.tx_site = self._ID
                     value.tx_code = code
                     value.tx_type = TransactionType.TRADE
+                    value.tx_acct = AccountType.CASH if is_cash else AccountType.MARGIN
                     value.tx_oid = exec_od
                     value.tx_eid = str(exec_id)
                     value.tx_time = self.__context.parse_iso_timestamp(exec_ts)

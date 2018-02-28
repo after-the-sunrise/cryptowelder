@@ -347,6 +347,7 @@ class CryptowelderContext:
                     Transaction.tx_site == t.tx_site,
                     Transaction.tx_code == t.tx_code,
                     Transaction.tx_type == t.tx_type,
+                    Transaction.tx_acct == t.tx_acct,
                     Transaction.tx_oid == t.tx_oid,
                     Transaction.tx_eid == t.tx_eid,
                 ).first()
@@ -358,6 +359,7 @@ class CryptowelderContext:
                 truncated.tx_site = t.tx_site
                 truncated.tx_code = t.tx_code
                 truncated.tx_type = t.tx_type
+                truncated.tx_acct = t.tx_acct
                 truncated.tx_oid = t.tx_oid
                 truncated.tx_eid = t.tx_eid
                 truncated.tx_time = t.tx_time.astimezone(utc)
@@ -468,6 +470,7 @@ class Transaction(CryptowelderContext.ENTITY_BASE):
     tx_site = Column(String, primary_key=True)
     tx_code = Column(String, primary_key=True)
     tx_type = Column(Type(TransactionType), primary_key=True)
+    tx_acct = Column(Type(AccountType), primary_key=True)
     tx_oid = Column(String, primary_key=True)
     tx_eid = Column(String, primary_key=True)
     tx_time = Column(DateTime, nullable=False)
@@ -480,6 +483,7 @@ class Transaction(CryptowelderContext.ENTITY_BASE):
             'site': self.tx_site,
             'code': self.tx_code,
             'type': self.tx_type,
+            'acct': self.tx_acct,
             'oid': self.tx_oid,
             'eid': self.tx_eid,
             'time': self.tx_time,
