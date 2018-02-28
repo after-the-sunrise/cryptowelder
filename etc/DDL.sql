@@ -56,7 +56,17 @@ PRIMARY KEY
 CREATE INDEX i_ticker_1
   ON t_ticker
   (
-    tk_time
+    tk_time,
+    tk_site,
+    tk_code
+  );
+
+CREATE INDEX i_ticker_2
+  ON t_ticker
+  (
+    extract(EPOCH FROM tk_time),
+    tk_site,
+    tk_code
   );
 
 --
@@ -87,6 +97,12 @@ CREATE INDEX i_balance_1
   ON t_balance
   (
     bc_time
+  );
+
+CREATE INDEX i_balance_2
+  ON t_balance
+  (
+    extract(EPOCH FROM bc_time)
   );
 
 --
@@ -144,6 +160,12 @@ CREATE INDEX i_position_1
     ps_time
   );
 
+CREATE INDEX i_position_2
+  ON t_position
+  (
+    extract(EPOCH FROM ps_time)
+  );
+
 --
 -- Transaction
 --
@@ -175,5 +197,17 @@ PRIMARY KEY
 CREATE INDEX i_transaction_1
   ON t_transaction
   (
-    tx_time
+    tx_time,
+    tx_site,
+    tx_code,
+    tx_type
+  );
+
+CREATE INDEX i_transaction_2
+  ON t_transaction
+  (
+    extract(EPOCH FROM tx_time),
+    tx_site,
+    tx_code,
+    tx_type
   );
