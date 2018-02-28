@@ -8,9 +8,16 @@ DROP VIEW IF EXISTS v_ticker;
 --
 -- Tickers with evaluation price.
 --
--- [Example]
--- SELECT pr_disp AS metric, tk_time AS time, tk_mtm FROM v_ticker
---   WHERE $__timeFilter(tk_time) AND pr_inst = 'BTC' ORDER BY tk_time, pr_disp
+-- [Grafana]
+-- SELECT pr_disp AS metric, tk_time AS time, tk_mtm AS price FROM v_ticker
+--   WHERE $__timeFilter(tk_time)
+--   AND pr_inst = 'BTC' ORDER BY tk_time, pr_disp
+--
+-- [Actual]
+-- SELECT pr_disp AS metric, tk_time AS time, tk_mtm AS price FROM v_ticker
+--   WHERE extract(epoch from tk_time)
+--     BETWEEN extract(epoch from now() - INTERVAL '1 day') AND extract(epoch from now())
+--   AND pr_inst = 'BTC' ORDER BY time, metric
 --
 CREATE VIEW v_ticker AS
   SELECT
@@ -67,6 +74,7 @@ CREATE VIEW v_balance AS
     b.bc_acct,
     b.bc_unit,
     b.bc_time,
+    b.bc_amnt,
     b.bc_amnt
     * CASE WHEN e.ev_ticker_site IS NOT NULL
       THEN COALESCE((t1.tk_ask + t1.tk_bid) * 0.5, t1.tk_ltp)
@@ -108,10 +116,11 @@ CREATE VIEW v_balance AS
 CREATE VIEW v_position AS
   SELECT
     pr.pr_disp,
-    ev.ev_unit,
     ps.ps_site,
     ps.ps_code,
+    pr.pr_inst,
     ps.ps_time,
+    ps.ps_inst,
     ps.ps_fund
     * CASE WHEN ev.ev_ticker_site IS NOT NULL
       THEN COALESCE((t1.tk_ask + t1.tk_bid) * 0.5, t1.tk_ltp)
@@ -125,9 +134,15 @@ CREATE VIEW v_position AS
     JOIN
     t_product pr
       ON
-        ps.ps_site = pr.pr_site
+        pr.pr_site = ps.ps_site
         AND
-        ps.ps_code = pr.pr_code
+        pr.pr_code = ps.ps_code
+        AND
+        (
+          pr.pr_expr IS NULL
+          OR
+          pr.pr_expr < ps.ps_time
+        )
     JOIN
     t_evaluation ev
       ON
@@ -151,19 +166,20 @@ CREATE VIEW v_position AS
         AND
         t2.tk_code = ev.ev_convert_code
         AND
-        t2.tk_time = ps.ps_time
-  WHERE
-    (
-      pr.pr_expr IS NULL
-      OR
-      pr.pr_expr < ps.ps_time
-    );
+        t2.tk_time = ps.ps_time;
 
 --
 -- Shortcut for Grafana to fetch all assets in evaluation unit.
 --
--- [Example]
--- SELECT time, 'Total' as metric, SUM(amount) FROM v_asset WHERE $__timeFilter(time) GROUP BY time ORDER BY time
+-- [Grafana]
+-- SELECT time, metric, SUM(amount) FROM v_asset
+--   WHERE $__timeFilter(time)
+--   GROUP BY time, metric ORDER BY time, metric
+--
+-- [Actual]
+-- SELECT time, metric, SUM(amount) FROM v_asset
+--   WHERE extract(epoch from time) BETWEEN extract(epoch from now() - INTERVAL '1 day') AND extract(epoch from now())
+--   GROUP BY time, metric ORDER BY time, metric
 --
 CREATE VIEW v_asset AS
   SELECT
@@ -181,27 +197,61 @@ CREATE VIEW v_asset AS
     v_position;
 
 --
+-- Shortcut for Grafana to fetch all exposures.
+--
+-- [Grafana]
+-- SELECT time, metric, amount FROM v_exposure
+--   WHERE $__timeFilter(time)
+--   AND unit = 'BTC' ORDER BY time, metric
+--
+-- [Actual]
+-- SELECT time, metric, amount FROM v_exposure
+--   WHERE extract(epoch from time) BETWEEN extract(epoch from now() - INTERVAL '1 day') AND extract(epoch from now())
+--   AND unit = 'BTC' ORDER BY time, metric
+--
+CREATE VIEW v_exposure AS
+  SELECT
+    bc_time AS "time",
+    ev_disp AS "metric",
+    bc_unit AS "unit",
+    bc_amnt AS "amount"
+  FROM
+    v_balance
+  UNION
+  SELECT
+    ps_time AS "time",
+    pr_disp AS "metric",
+    pr_inst AS "unit",
+    ps_inst AS "amount"
+  FROM
+    v_position;
+
+--
 -- Cash amount ratio of BTC / JPY.
 --
--- [Example]
--- SELECT time, ratio FROM v_ratio_cash_btc WHERE metric = 'bitflyer' AND $__timeFilter(time) ORDER BY time
+-- [Grafana]
+-- SELECT time, ratio FROM v_ratio_cash_btc WHERE metric = 'bitflyer'
+-- AND $__timeFilter(time)
+-- ORDER BY time
+--
+-- [Actual]
+-- SELECT time, ratio FROM v_ratio_cash_btc WHERE metric = 'bitflyer'
+-- AND extract(epoch from time) BETWEEN extract(epoch from now() - INTERVAL '1 day') AND extract(epoch from now())
+-- ORDER BY time
 --
 CREATE VIEW v_ratio_cash_btc AS
   SELECT
-    b1.bc_site                 AS "metric",
-    b1.bc_time                 AS "time",
-    SUM(b1.amount / b2.amount) AS "ratio"
+    b1.bc_site            AS "metric",
+    b1.bc_time            AS "time",
+    b1.amount / b2.amount AS "ratio"
   FROM
     v_balance b1,
     v_balance b2
   WHERE
     b1.bc_site = b2.bc_site
     AND
-    b1.bc_acct = b2.bc_acct AND b1.bc_acct = 'CASH'
-    AND
-    b1.bc_unit = 'BTC' AND b2.bc_unit = 'JPY'
-    AND
     b1.bc_time = b2.bc_time
-  GROUP BY
-    b1.bc_site,
-    b1.bc_time;
+    AND
+    (b1.bc_acct, b2.bc_acct) = ('CASH', 'CASH')
+    AND
+    (b1.bc_unit, b2.bc_unit) = ('BTC', 'JPY');
