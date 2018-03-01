@@ -30,6 +30,28 @@ CREATE INDEX t_product_1
   );
 
 --
+-- Timestamp
+--
+DROP TABLE IF EXISTS t_timestamp;
+
+CREATE TABLE t_timestamp (
+  ts_time TIMESTAMP NOT NULL
+);
+
+ALTER TABLE t_timestamp
+  ADD CONSTRAINT i_timestamp_0
+PRIMARY KEY
+  (
+    ts_time
+  );
+
+CREATE INDEX i_timestamp_1
+  ON t_timestamp
+  (
+    extract(EPOCH FROM ts_time)
+  );
+
+--
 -- Ticker
 --
 DROP TABLE IF EXISTS t_ticker;
@@ -67,6 +89,28 @@ CREATE INDEX i_ticker_2
     extract(EPOCH FROM tk_time),
     tk_site,
     tk_code
+  );
+
+--
+-- Account
+--
+DROP TABLE IF EXISTS t_account;
+
+CREATE TABLE t_account
+(
+  ac_site VARCHAR(16) NOT NULL,
+  ac_acct VARCHAR(16) NOT NULL,
+  ac_unit VARCHAR(16) NOT NULL,
+  ac_disp VARCHAR(16) NOT NULL
+);
+
+ALTER TABLE t_account
+  ADD CONSTRAINT i_account_0
+PRIMARY KEY
+  (
+    ac_site,
+    ac_acct,
+    ac_unit
   );
 
 --
@@ -113,9 +157,7 @@ DROP TABLE IF EXISTS t_evaluation;
 CREATE TABLE t_evaluation
 (
   ev_site         VARCHAR(16) NOT NULL,
-  ev_acct         VARCHAR(16) NOT NULL,
   ev_unit         VARCHAR(16) NOT NULL,
-  ev_disp         VARCHAR(16) NOT NULL,
   ev_ticker_site  VARCHAR(16),
   ev_ticker_code  VARCHAR(32),
   ev_convert_site VARCHAR(16),
@@ -127,7 +169,6 @@ ALTER TABLE t_evaluation
 PRIMARY KEY
   (
     ev_site,
-    ev_acct,
     ev_unit
   );
 

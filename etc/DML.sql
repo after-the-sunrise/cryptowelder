@@ -24,25 +24,51 @@ VALUES
 --
 TRUNCATE TABLE t_evaluation;
 
-INSERT INTO t_evaluation (ev_site, ev_acct, ev_unit, ev_disp, ev_ticker_site, ev_ticker_code, ev_convert_site, ev_convert_code)
+INSERT INTO t_evaluation (ev_site, ev_unit, ev_ticker_site, ev_ticker_code, ev_convert_site, ev_convert_code)
 VALUES
-  ('bitbank', 'CASH', 'JPY', 'BBK JPY', NULL, NULL, NULL, NULL),
-  ('bitbank', 'CASH', 'BTC', 'BBK BTC', 'bitbank', 'btc_jpy', NULL, NULL),
-  ('bitfinex', 'CASH', 'USD', 'BFN USD', 'oanda', 'USD_JPY', NULL, NULL),
-  ('bitflyer', 'CASH', 'JPY', 'BFL JPY', NULL, NULL, NULL, NULL),
-  ('bitflyer', 'CASH', 'BTC', 'BFL BTC', 'bitflyer', 'BTC_JPY', NULL, NULL),
-  ('bitflyer', 'MARGIN', 'JPY', 'BFL JPYC', NULL, NULL, NULL, NULL),
-  ('bitflyer', 'MARGIN', 'BTC', 'BFL BTCC', 'bitflyer', 'BTC_JPY', NULL, NULL),
-  ('bitflyer', 'CASH', 'ETH', 'BFL ETH', 'bitflyer', 'ETH_BTC', 'bitflyer', 'BTC_JPY'),
-  ('bitflyer', 'CASH', 'BCH', 'BFL BCH', 'bitflyer', 'BCH_BTC', 'bitflyer', 'BTC_JPY'),
-  ('bitmex', 'MARGIN', 'USD', 'BMX USD', 'oanda', 'USD_JPY', NULL, NULL),
-  ('bitmex', 'MARGIN', 'BTC', 'BMX XBT', 'bitflyer', 'BTC_JPY', NULL, NULL),
-  ('btcbox', 'CASH', 'JPY', 'BOX JPY', NULL, NULL, NULL, NULL),
-  ('btcbox', 'CASH', 'BTC', 'BOX BTC', 'btcbox', 'btc', NULL, NULL),
-  ('coincheck', 'CASH', 'JPY', 'CCK JPY', NULL, NULL, NULL, NULL),
-  ('coincheck', 'CASH', 'BTC', 'CCK BTC', 'coincheck', 'btc_jpy', NULL, NULL),
-  ('poloniex', 'CASH', 'USD', 'PLX USD', 'oanda', 'USD_JPY', NULL, NULL),
-  ('quoinex', 'CASH', 'JPY', 'QNX JPY', NULL, NULL, NULL, NULL),
-  ('quoinex', 'CASH', 'BTC', 'QNX BTC', 'quoinex', 'BTCJPY', NULL, NULL),
-  ('zaif', 'CASH', 'JPY', 'ZIF JPY', NULL, NULL, NULL, NULL),
-  ('zaif', 'CASH', 'BTC', 'ZIF BTC', 'zaif', 'btc_jpy', NULL, NULL);
+  ('bitbank', 'JPY', NULL, NULL, NULL, NULL),
+  ('bitbank', 'BTC', 'bitbank', 'btc_jpy', NULL, NULL),
+  ('bitfinex', 'USD', 'oanda', 'USD_JPY', NULL, NULL),
+  ('bitflyer', 'JPY', NULL, NULL, NULL, NULL),
+  ('bitflyer', 'BTC', 'bitflyer', 'BTC_JPY', NULL, NULL),
+  ('bitflyer', 'ETH', 'bitflyer', 'ETH_BTC', 'bitflyer', 'BTC_JPY'),
+  ('bitflyer', 'BCH', 'bitflyer', 'BCH_BTC', 'bitflyer', 'BTC_JPY'),
+  ('bitmex', 'USD', 'oanda', 'USD_JPY', NULL, NULL),
+  ('bitmex', 'BTC', 'bitflyer', 'BTC_JPY', NULL, NULL),
+  ('btcbox', 'JPY', NULL, NULL, NULL, NULL),
+  ('btcbox', 'BTC', 'btcbox', 'btc', NULL, NULL),
+  ('coincheck', 'JPY', NULL, NULL, NULL, NULL),
+  ('coincheck', 'BTC', 'coincheck', 'btc_jpy', NULL, NULL),
+  ('poloniex', 'USD', 'oanda', 'USD_JPY', NULL, NULL),
+  ('quoinex', 'JPY', NULL, NULL, NULL, NULL),
+  ('quoinex', 'BTC', 'quoinex', 'BTCJPY', NULL, NULL),
+  ('zaif', 'JPY', NULL, NULL, NULL, NULL),
+  ('zaif', 'BTC', 'zaif', 'btc_jpy', NULL, NULL);
+
+--
+-- t_evaluation
+--
+TRUNCATE TABLE t_account;
+
+INSERT INTO t_account (ac_site, ac_acct, ac_unit, ac_disp)
+VALUES
+  ('bitbank', 'CASH', 'JPY', 'BBK JPY'),
+  ('bitbank', 'CASH', 'BTC', 'BBK BTC'),
+  ('bitfinex', 'CASH', 'USD', 'BFN USD'),
+  ('bitflyer', 'CASH', 'JPY', 'BFL JPY'),
+  ('bitflyer', 'CASH', 'BTC', 'BFL BTC'),
+  ('bitflyer', 'MARGIN', 'JPY', 'BFL JPYC'),
+  ('bitflyer', 'MARGIN', 'BTC', 'BFL BTCC'),
+  ('bitflyer', 'CASH', 'ETH', 'BFL ETH'),
+  ('bitflyer', 'CASH', 'BCH', 'BFL BCH'),
+  ('bitmex', 'MARGIN', 'USD', 'BMX USD'),
+  ('bitmex', 'MARGIN', 'BTC', 'BMX XBT'),
+  ('btcbox', 'CASH', 'JPY', 'BOX JPY'),
+  ('btcbox', 'CASH', 'BTC', 'BOX BTC'),
+  ('coincheck', 'CASH', 'JPY', 'CCK JPY'),
+  ('coincheck', 'CASH', 'BTC', 'CCK BTC'),
+  ('poloniex', 'CASH', 'USD', 'PLX USD'),
+  ('quoinex', 'CASH', 'JPY', 'QNX JPY'),
+  ('quoinex', 'CASH', 'BTC', 'QNX BTC'),
+  ('zaif', 'CASH', 'JPY', 'ZIF JPY'),
+  ('zaif', 'CASH', 'BTC', 'ZIF BTC');

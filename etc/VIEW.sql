@@ -1,9 +1,68 @@
--- Drop views first for dependency issues.
-DROP VIEW IF EXISTS v_ratio_cash_btc;
-DROP VIEW IF EXISTS v_asset;
-DROP VIEW IF EXISTS v_position;
-DROP VIEW IF EXISTS v_balance;
-DROP VIEW IF EXISTS v_ticker;
+--
+-- Shortcut for evaluation rate.
+--
+CREATE OR REPLACE VIEW v_evaluation AS
+  SELECT
+    t.*,
+    e.*,
+    CASE WHEN e.ev_ticker_site IS NOT NULL
+      THEN COALESCE((t1.tk_ask + t1.tk_bid) * 0.5, t1.tk_ltp)
+    ELSE 1 END
+    *
+    CASE WHEN e.ev_convert_site IS NOT NULL
+      THEN COALESCE((t2.tk_ask + t2.tk_bid) * 0.5, t2.tk_ltp)
+    ELSE 1 END
+      AS ev_rate
+  FROM
+    t_timestamp t
+    CROSS JOIN
+    t_evaluation e
+    LEFT OUTER JOIN
+    t_ticker t1
+      ON
+        t1.tk_site = e.ev_ticker_site
+        AND
+        t1.tk_code = e.ev_ticker_code
+        AND
+        t1.tk_time = t.ts_time
+    LEFT OUTER JOIN
+    t_ticker t2
+      ON
+        t2.tk_site = e.ev_convert_site
+        AND
+        t2.tk_code = e.ev_convert_code
+        AND
+        t2.tk_time = t.ts_time;
+
+--
+-- Shortcut for product instrument and funding evaluation.
+--
+CREATE OR REPLACE VIEW v_product AS
+  SELECT
+    ts.*,
+    pr.*,
+    ei.ev_rate AS "ev_rate_inst",
+    ef.ev_rate AS "ev_rate_fund"
+  FROM
+    t_timestamp ts
+    CROSS JOIN
+    t_product pr
+    LEFT OUTER JOIN
+    v_evaluation ei
+      ON
+        ei.ts_time = ts.ts_time
+        AND
+        ei.ev_site = pr.pr_site
+        AND
+        ei.ev_unit = pr.pr_inst
+    LEFT OUTER JOIN
+    v_evaluation ef
+      ON
+        ef.ts_time = ts.ts_time
+        AND
+        ef.ev_site = pr.pr_site
+        AND
+        ef.ev_unit = pr.pr_fund;
 
 --
 -- Tickers with evaluation price.
@@ -19,154 +78,102 @@ DROP VIEW IF EXISTS v_ticker;
 --     BETWEEN extract(epoch from now() - INTERVAL '1 day') AND extract(epoch from now())
 --   AND pr_inst = 'BTC' ORDER BY time, metric
 --
-CREATE VIEW v_ticker AS
+CREATE OR REPLACE VIEW v_ticker AS
   SELECT
     t.*,
     p.*,
-    e.*,
-    COALESCE((t.tk_ask + t.tk_bid) * 0.5, t.tk_ltp)
-    *
-    CASE WHEN e.ev_ticker_site IS NOT NULL
-      THEN COALESCE((t1.tk_ask + t1.tk_bid) * 0.5, t1.tk_ltp)
-    ELSE 1 END
-    *
-    CASE WHEN e.ev_convert_site IS NOT NULL
-      THEN COALESCE((t2.tk_ask + t2.tk_bid) * 0.5, t2.tk_ltp)
-    ELSE 1 END
-      AS tk_mtm
+    COALESCE((t.tk_ask + t.tk_bid) * 0.5, t.tk_ltp) * p.ev_rate_fund AS tk_mtm
   FROM
     t_ticker t
-    JOIN
-    t_product p
-      ON p.pr_site = t.tk_site
-         AND
-         p.pr_code = t.tk_code
-    JOIN
-    t_evaluation e
-      ON
-        e.ev_site = p.pr_site
-        AND
-        e.ev_unit = p.pr_fund
     LEFT OUTER JOIN
-    t_ticker t1
+    v_product p
       ON
-        t1.tk_site = e.ev_ticker_site
+        p.pr_site = t.tk_site
         AND
-        t1.tk_code = e.ev_ticker_code
+        p.pr_code = t.tk_code
         AND
-        t1.tk_time = t.tk_time
-    LEFT OUTER JOIN
-    t_ticker t2
-      ON
-        t2.tk_site = e.ev_convert_site
-        AND
-        t2.tk_code = e.ev_convert_code
-        AND
-        t2.tk_time = t.tk_time;
+        p.ts_time = t.tk_time;
+
+--
+-- Ticker ratio with evaluation price.
+--
+-- [Grafana]
+-- SELECT time, metric, ratio FROM v_ticker_ratio
+--   WHERE $__timeFilter(time)
+--   ORDER BY time, metric
+--
+-- [Actual]
+-- SELECT time, metric, ratio FROM v_ticker_ratio
+--   WHERE extract(epoch from time)
+--     BETWEEN extract(epoch from now() - INTERVAL '1 day') AND extract(epoch from now())
+--   ORDER BY time, metric
+--
+CREATE OR REPLACE VIEW v_ticker_ratio AS
+  WITH w_ticker AS (
+      SELECT *
+      FROM v_ticker
+  )
+  SELECT
+    t1.tk_time                AS "time",
+    t1.pr_disp                AS "metric",
+    t1.tk_mtm / t2.tk_mtm - 1 AS "ratio"
+  FROM
+    w_ticker t1,
+    w_ticker t2
+  WHERE
+    t1.tk_time = t2.tk_time
+    AND
+    t1.pr_inst = 'BTC'
+    AND
+    t2.tk_site = 'bitflyer' AND t2.tk_code = 'BTC_JPY';
 
 --
 -- Balance with amounts converted to evaluation unit.
 --
-CREATE VIEW v_balance AS
+CREATE OR REPLACE VIEW v_balance AS
   SELECT
-    e.ev_disp,
-    b.bc_site,
-    b.bc_acct,
-    b.bc_unit,
-    b.bc_time,
-    b.bc_amnt,
-    b.bc_amnt
-    * CASE WHEN e.ev_ticker_site IS NOT NULL
-      THEN COALESCE((t1.tk_ask + t1.tk_bid) * 0.5, t1.tk_ltp)
-      ELSE 1 END
-    * CASE WHEN e.ev_convert_site IS NOT NULL
-      THEN COALESCE((t2.tk_ask + t2.tk_bid) * 0.5, t2.tk_ltp)
-      ELSE 1 END
-      AS "amount"
+    b.*,
+    a.*,
+    e.*,
+    b.bc_amnt * e.ev_rate AS ev_amnt
   FROM
-    t_evaluation e
-    LEFT OUTER JOIN
     t_balance b
+    LEFT OUTER JOIN
+    t_account a
+      ON
+        b.bc_site = a.ac_site
+        AND
+        b.bc_acct = a.ac_acct
+        AND
+        b.bc_unit = a.ac_unit
+    LEFT OUTER JOIN
+    v_evaluation e
       ON
         b.bc_site = e.ev_site
         AND
-        b.bc_acct = e.ev_acct
-        AND
         b.bc_unit = e.ev_unit
-    LEFT OUTER JOIN
-    t_ticker t1
-      ON
-        t1.tk_site = e.ev_ticker_site
         AND
-        t1.tk_code = e.ev_ticker_code
-        AND
-        t1.tk_time = b.bc_time
-    LEFT OUTER JOIN
-    t_ticker t2
-      ON
-        t2.tk_site = e.ev_convert_site
-        AND
-        t2.tk_code = e.ev_convert_code
-        AND
-        t2.tk_time = b.bc_time;
+        b.bc_time = e.ts_time;
 
 --
 -- Position with funding amount converted to evaluation unit.
 --
-CREATE VIEW v_position AS
+CREATE OR REPLACE VIEW v_position AS
   SELECT
-    pr.pr_disp,
-    ps.ps_site,
-    ps.ps_code,
-    pr.pr_inst,
-    ps.ps_time,
-    ps.ps_inst,
-    ps.ps_fund
-    * CASE WHEN ev.ev_ticker_site IS NOT NULL
-      THEN COALESCE((t1.tk_ask + t1.tk_bid) * 0.5, t1.tk_ltp)
-      ELSE 1 END
-    * CASE WHEN ev.ev_convert_site IS NOT NULL
-      THEN COALESCE((t2.tk_ask + t2.tk_bid) * 0.5, t2.tk_ltp)
-      ELSE 1 END
-      AS "amount"
+    p.*,
+    t.*,
+    p.ps_inst * t.ev_rate_inst AS "ps_eval_inst",
+    p.ps_fund * t.ev_rate_fund AS "ps_eval_fund"
   FROM
-    t_position ps
-    JOIN
-    t_product pr
-      ON
-        pr.pr_site = ps.ps_site
-        AND
-        pr.pr_code = ps.ps_code
-        AND
-        (
-          pr.pr_expr IS NULL
-          OR
-          pr.pr_expr < ps.ps_time
-        )
-    JOIN
-    t_evaluation ev
-      ON
-        ev.ev_site = pr.pr_site
-        AND
-        ev.ev_acct = 'MARGIN'
-        AND
-        ev.ev_unit = pr.pr_fund
+    t_position p
     LEFT OUTER JOIN
-    t_ticker t1
+    v_ticker t
       ON
-        t1.tk_site = ev.ev_ticker_site
+        p.ps_site = t.tk_site
         AND
-        t1.tk_code = ev.ev_ticker_code
+        p.ps_code = t.tk_code
         AND
-        t1.tk_time = ps.ps_time
-    LEFT OUTER JOIN
-    t_ticker t2
-      ON
-        t2.tk_site = ev.ev_convert_site
-        AND
-        t2.tk_code = ev.ev_convert_code
-        AND
-        t2.tk_time = ps.ps_time;
+        p.ps_time = t.tk_time;
 
 --
 -- Shortcut for Grafana to fetch all assets in evaluation unit.
@@ -181,20 +188,24 @@ CREATE VIEW v_position AS
 --   WHERE extract(epoch from time) BETWEEN extract(epoch from now() - INTERVAL '1 day') AND extract(epoch from now())
 --   GROUP BY time, metric ORDER BY time, metric
 --
-CREATE VIEW v_asset AS
+CREATE OR REPLACE VIEW v_asset AS
   SELECT
     bc_time AS "time",
-    ev_disp AS "metric",
-    amount
+    ac_disp AS "metric",
+    ev_amnt AS "amount"
   FROM
     v_balance
+  WHERE
+    ac_disp IS NOT NULL
   UNION
   SELECT
-    ps_time AS "time",
-    pr_disp AS "metric",
-    amount
+    ps_time      AS "time",
+    pr_disp      AS "metric",
+    ps_eval_fund AS "amount"
   FROM
-    v_position;
+    v_position
+  WHERE
+    pr_disp IS NOT NULL;
 
 --
 -- Shortcut for Grafana to fetch all exposures.
@@ -209,10 +220,10 @@ CREATE VIEW v_asset AS
 --   WHERE extract(epoch from time) BETWEEN extract(epoch from now() - INTERVAL '1 day') AND extract(epoch from now())
 --   AND unit = 'BTC' ORDER BY time, metric
 --
-CREATE VIEW v_exposure AS
+CREATE OR REPLACE VIEW v_exposure AS
   SELECT
     bc_time AS "time",
-    ev_disp AS "metric",
+    ac_disp AS "metric",
     bc_unit AS "unit",
     bc_amnt AS "amount"
   FROM
@@ -239,11 +250,11 @@ CREATE VIEW v_exposure AS
 -- AND extract(epoch from time) BETWEEN extract(epoch from now() - INTERVAL '1 day') AND extract(epoch from now())
 -- ORDER BY time
 --
-CREATE VIEW v_ratio_cash_btc AS
+CREATE OR REPLACE VIEW v_ratio_cash_btc AS
   SELECT
-    b1.bc_site            AS "metric",
-    b1.bc_time            AS "time",
-    b1.amount / b2.amount AS "ratio"
+    b1.bc_site              AS "metric",
+    b1.bc_time              AS "time",
+    b1.ev_amnt / b2.ev_amnt AS "ratio"
   FROM
     v_balance b1,
     v_balance b2
@@ -255,3 +266,23 @@ CREATE VIEW v_ratio_cash_btc AS
     (b1.bc_acct, b2.bc_acct) = ('CASH', 'CASH')
     AND
     (b1.bc_unit, b2.bc_unit) = ('BTC', 'JPY');
+
+--
+-- Transactions in evaluation amounts.
+--
+CREATE OR REPLACE VIEW v_transaction AS
+  SELECT
+    t.*,
+    p.*,
+    t.tx_inst * p.ev_rate_inst AS "tx_amnt_inst",
+    t.tx_fund * p.ev_rate_fund AS "tx_amnt_fund"
+  FROM
+    t_transaction t
+    LEFT OUTER JOIN
+    v_product p
+      ON
+        t.tx_site = p.pr_site
+        AND
+        t.tx_code = p.pr_code
+        AND
+        date_trunc('minute', t.tx_time) = p.ts_time;
