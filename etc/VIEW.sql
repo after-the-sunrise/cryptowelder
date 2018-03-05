@@ -269,6 +269,7 @@ CREATE OR REPLACE VIEW v_ratio_cash_btc AS
 
 --
 -- Transactions aggregated per timestamp.
+-- TODO : FX evaluation price.
 --
 CREATE OR REPLACE VIEW v_transaction AS
   SELECT
