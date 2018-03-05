@@ -268,21 +268,49 @@ CREATE OR REPLACE VIEW v_ratio_cash_btc AS
     (b1.bc_unit, b2.bc_unit) = ('BTC', 'JPY');
 
 --
--- Transactions in evaluation amounts.
+-- Transactions aggregated per timestamp.
 --
 CREATE OR REPLACE VIEW v_transaction AS
   SELECT
-    t.*,
-    p.*,
-    t.tx_inst * p.ev_rate_inst AS "tx_amnt_inst",
-    t.tx_fund * p.ev_rate_fund AS "tx_amnt_fund"
+    pr.ts_time,
+    pr.pr_site,
+    pr.pr_code,
+    pr.pr_disp,
+    pr.ev_rate_inst,
+    pr.ev_rate_fund,
+    sum(abs(tx.tx_inst))                   AS tx_grs_inst,
+    sum(abs(tx.tx_fund))                   AS tx_grs_fund,
+    sum(tx.tx_inst)                        AS tx_net_inst,
+    sum(tx.tx_fund)                        AS tx_net_fund,
+    sum(abs(tx.tx_inst * pr.ev_rate_inst)) AS tx_amnt_grs_inst,
+    sum(abs(tx.tx_fund * pr.ev_rate_fund)) AS tx_amnt_grs_fund,
+    sum(tx.tx_inst * pr.ev_rate_inst)      AS tx_amnt_net_inst,
+    sum(tx.tx_fund * pr.ev_rate_fund)      AS tx_amnt_net_fund,
+    count(tx.*)                            AS tx_count
   FROM
-    t_transaction t
+    v_product pr
     LEFT OUTER JOIN
-    v_product p
+    t_transaction tx
       ON
-        t.tx_site = p.pr_site
+        cast((tx.tx_time + INTERVAL '9 hour') AT TIME ZONE 'Asia/Tokyo' AS DATE)
+        =
+        cast((pr.ts_time + INTERVAL '9 hour') AT TIME ZONE 'Asia/Tokyo' AS DATE)
         AND
-        t.tx_code = p.pr_code
+        date_trunc('minute', tx.tx_time) <= pr.ts_time
         AND
-        date_trunc('minute', t.tx_time) = p.ts_time;
+        tx.tx_site = pr.pr_site
+        AND
+        tx.tx_code = pr.pr_code
+        AND
+        tx.tx_type = 'TRADE'
+  WHERE
+    cast(extract(MINUTE FROM pr.ts_time) AS INTEGER) % 15 = 0
+  GROUP BY
+    pr.ts_time,
+    pr.pr_site,
+    pr.pr_code,
+    pr.pr_disp,
+    pr.ev_rate_inst,
+    pr.ev_rate_fund
+  HAVING
+    count(tx.*) > 0;
