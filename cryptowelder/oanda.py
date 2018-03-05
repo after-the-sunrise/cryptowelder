@@ -1,7 +1,7 @@
 from threading import Thread
 from time import sleep
 
-from cryptowelder.context import CryptowelderContext, Ticker
+from cryptowelder.context import CryptowelderContext, Ticker, Balance, AccountType, UnitType
 
 
 class OandaWelder:
@@ -27,7 +27,10 @@ class OandaWelder:
 
         while not self.__context.is_closed():
 
-            threads = [Thread(target=self._process_ticker)]
+            threads = [
+                Thread(target=self._process_ticker),
+                Thread(target=self._process_balance),
+            ]
 
             for t in threads:
                 t.start()
@@ -76,6 +79,54 @@ class OandaWelder:
         except Exception as e:
 
             self.__logger.warn('Ticker Failure : %s - %s', type(e), e.args)
+
+    def _process_balance(self):
+
+        try:
+
+            token = self.__context.get_property(self._ID, 'token', None)
+
+            if token is None:
+                return
+
+            now = self.__context.get_now()
+
+            accounts = self.__context.requests_get(
+                self.__endpoint + '/v1/accounts',
+                headers={"Authorization": "Bearer " + token}
+            )
+
+            values = []
+
+            for account in accounts.get('accounts') if accounts is not None else []:
+
+                details = self.__context.requests_get(
+                    self.__endpoint + '/v1/accounts/%s' % account.get('accountId'),
+                    headers={"Authorization": "Bearer " + token}
+                )
+
+                try:
+                    unit = UnitType[details.get('accountCurrency')]
+                except KeyError:
+                    continue
+
+                value = Balance()
+                value.bc_site = self._ID
+                value.bc_acct = AccountType.MARGIN
+                value.bc_unit = unit
+                value.bc_time = now
+                value.bc_amnt = details.get('balance')
+
+                values.append(value)
+
+            self.__context.save_balances(values)
+
+            for value in values:
+                self.__logger.debug('Balance : %s', value)
+
+        except Exception as e:
+
+            self.__logger.warn('Balance Failure : %s - %s', type(e), e.args)
 
 
 def main():
