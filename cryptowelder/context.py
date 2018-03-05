@@ -406,7 +406,22 @@ class TransactionType(Enum):
     SWAP = auto()
 
 
-class Ticker(CryptowelderContext.ENTITY_BASE):
+class BaseEntity:
+    @staticmethod
+    def _to_string(value):
+        if isinstance(value, dict):
+            return str({BaseEntity._to_string(k): BaseEntity._to_string(v) for k, v in value.items()})
+
+        if isinstance(value, Enum):
+            return value.name
+
+        if isinstance(value, datetime):
+            return value.strftime('%Y-%m-%d %H:%M:%S.%f %Z')
+
+        return str(value)
+
+
+class Ticker(CryptowelderContext.ENTITY_BASE, BaseEntity):
     __tablename__ = "t_ticker"
     tk_site = Column(String, primary_key=True)
     tk_code = Column(String, primary_key=True)
@@ -416,7 +431,7 @@ class Ticker(CryptowelderContext.ENTITY_BASE):
     tk_ltp = Column(Numeric)
 
     def __str__(self):
-        return str({
+        return BaseEntity._to_string({
             'table': self.__tablename__,
             'site': self.tk_site,
             'code': self.tk_code,
@@ -427,7 +442,7 @@ class Ticker(CryptowelderContext.ENTITY_BASE):
         })
 
 
-class Balance(CryptowelderContext.ENTITY_BASE):
+class Balance(CryptowelderContext.ENTITY_BASE, BaseEntity):
     __tablename__ = "t_balance"
     bc_site = Column(String, primary_key=True)
     bc_acct = Column(Type(AccountType), primary_key=True)
@@ -436,7 +451,7 @@ class Balance(CryptowelderContext.ENTITY_BASE):
     bc_amnt = Column(Numeric)
 
     def __str__(self):
-        return str({
+        return BaseEntity._to_string({
             'table': self.__tablename__,
             'site': self.bc_site,
             'account': self.bc_acct,
@@ -446,7 +461,7 @@ class Balance(CryptowelderContext.ENTITY_BASE):
         })
 
 
-class Position(CryptowelderContext.ENTITY_BASE):
+class Position(CryptowelderContext.ENTITY_BASE, BaseEntity):
     __tablename__ = "t_position"
     ps_site = Column(String, primary_key=True)
     ps_code = Column(String, primary_key=True)
@@ -455,7 +470,7 @@ class Position(CryptowelderContext.ENTITY_BASE):
     ps_fund = Column(Numeric)
 
     def __str__(self):
-        return str({
+        return BaseEntity._to_string({
             'table': self.__tablename__,
             'site': self.ps_site,
             'code': self.ps_code,
@@ -465,7 +480,7 @@ class Position(CryptowelderContext.ENTITY_BASE):
         })
 
 
-class Transaction(CryptowelderContext.ENTITY_BASE):
+class Transaction(CryptowelderContext.ENTITY_BASE, BaseEntity):
     __tablename__ = 't_transaction'
     tx_site = Column(String, primary_key=True)
     tx_code = Column(String, primary_key=True)
@@ -478,7 +493,7 @@ class Transaction(CryptowelderContext.ENTITY_BASE):
     tx_fund = Column(Numeric)
 
     def __str__(self):
-        return str({
+        return BaseEntity._to_string({
             'table': self.__tablename__,
             'site': self.tx_site,
             'code': self.tx_code,

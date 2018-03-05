@@ -467,6 +467,68 @@ class TestCryptowelderContext(TestCase):
         results = self.target.save_transactions([t1])
         self.assertEqual(len(results), 0)
 
+    def test_Ticker(self):
+        value = Ticker()
+        self.assertEqual("{'table': 't_ticker', 'site': 'None', 'code': 'None', 'time': 'None', "
+                         "'ask': 'None', 'bid': 'None', 'ltp': 'None'}", str(value))
+
+        value.tk_site = 'foo'
+        value.tk_code = 'bar'
+        value.tk_time = datetime.fromtimestamp(1234567890.123456, tz=utc)
+        value.tk_ask = Decimal('1.2')
+        value.tk_bid = Decimal('2.3')
+        value.tk_ltp = Decimal('3.4')
+        self.assertEqual("{'table': 't_ticker', 'site': 'foo', 'code': 'bar', "
+                         "'time': '2009-02-13 23:31:30.123456 UTC', "
+                         "'ask': '1.2', 'bid': '2.3', 'ltp': '3.4'}", str(value))
+
+    def test_Balance(self):
+        value = Balance()
+        self.assertEqual("{'table': 't_balance', 'site': 'None', 'account': 'None', "
+                         "'unit': 'None', 'time': 'None', 'amount': 'None'}", str(value))
+
+        value.bc_site = 'foo'
+        value.bc_acct = AccountType.CASH
+        value.bc_unit = UnitType.JPY
+        value.bc_time = datetime.fromtimestamp(1234567890.123456, tz=utc)
+        value.bc_amnt = Decimal('1.2')
+        self.assertEqual("{'table': 't_balance', 'site': 'foo', 'account': 'CASH', 'unit': 'JPY', "
+                         "'time': '2009-02-13 23:31:30.123456 UTC', 'amount': '1.2'}", str(value))
+
+    def test_Position(self):
+        value = Position()
+        self.assertEqual("{'table': 't_position', 'site': 'None', 'code': 'None', "
+                         "'time': 'None', 'instrument': 'None', 'funding': 'None'}", str(value))
+
+        value.ps_site = 'foo'
+        value.ps_code = 'bar'
+        value.ps_time = datetime.fromtimestamp(1234567890.123456, tz=utc)
+        value.ps_inst = Decimal('1.2')
+        value.ps_fund = Decimal('2.3')
+        self.assertEqual("{'table': 't_position', 'site': 'foo', 'code': 'bar', "
+                         "'time': '2009-02-13 23:31:30.123456 UTC', "
+                         "'instrument': '1.2', 'funding': '2.3'}", str(value))
+
+    def test_Transaction(self):
+        value = Transaction()
+        self.assertEqual("{'table': 't_transaction', 'site': 'None', 'code': 'None', "
+                         "'type': 'None', 'acct': 'None', 'oid': 'None', 'eid': 'None', "
+                         "'time': 'None', 'instrument': 'None', 'funding': 'None'}", str(value))
+
+        value.tx_site = 'foo'
+        value.tx_code = 'bar'
+        value.tx_type = TransactionType.TRADE
+        value.tx_acct = AccountType.CASH
+        value.tx_oid = "o_id"
+        value.tx_eid = "e_id"
+        value.tx_time = datetime.fromtimestamp(1234567890.123456, tz=utc)
+        value.tx_inst = Decimal('1.2')
+        value.tx_fund = Decimal('2.3')
+        self.assertEqual("{'table': 't_transaction', 'site': 'foo', 'code': 'bar', 'type': 'TRADE', "
+                         "'acct': 'CASH', 'oid': 'o_id', 'eid': 'e_id', "
+                         "'time': '2009-02-13 23:31:30.123456 UTC', "
+                         "'instrument': '1.2', 'funding': '2.3'}", str(value))
+
 
 if __name__ == '__main__':
     main()
