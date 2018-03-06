@@ -123,7 +123,7 @@ CREATE OR REPLACE VIEW v_ticker_ratio AS
   WHERE
     t1.tk_time = t2.tk_time
     AND
-    t1.pr_inst = 'BTC'
+    t1.pr_inst IN ('BTC', 'BFX')
     AND
     t2.tk_site = 'bitflyer' AND t2.tk_code = 'BTC_JPY';
 
