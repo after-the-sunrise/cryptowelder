@@ -245,29 +245,79 @@ CREATE OR REPLACE VIEW v_asset AS
 -- [Grafana]
 -- SELECT time, metric, amount FROM v_exposure
 --   WHERE $__timeFilter(time)
---   AND unit = 'BTC' ORDER BY time, metric
+--   ORDER BY time, metric
 --
 -- [Actual]
 -- SELECT time, metric, amount FROM v_exposure
 --   WHERE extract(epoch from time) BETWEEN extract(epoch from now() - INTERVAL '1 day') AND extract(epoch from now())
---   AND unit = 'BTC' ORDER BY time, metric
+--   ORDER BY time, metric
 --
 CREATE OR REPLACE VIEW v_exposure AS
+  WITH w_exposure AS (
+    SELECT
+      bc_time AS "time",
+      ac_disp AS "metric",
+      bc_unit AS "unit",
+      bc_amnt AS "amount"
+    FROM
+      v_balance
+    WHERE
+      bc_unit = 'BTC'
+    UNION
+    SELECT
+      ps_time AS "time",
+      pr_disp AS "metric",
+      pr_inst AS "unit",
+      ps_inst AS "amount"
+    FROM
+      v_position
+    WHERE
+      pr_inst IN ('BTC', 'BFX')
+  )
   SELECT
-    bc_time AS "time",
-    ac_disp AS "metric",
-    bc_unit AS "unit",
-    bc_amnt AS "amount"
+    time,
+    metric,
+    sum(amount) AS "amount"
   FROM
-    v_balance
+    w_exposure
+  GROUP BY
+    time,
+    metric
   UNION
   SELECT
-    ps_time AS "time",
-    pr_disp AS "metric",
-    pr_inst AS "unit",
-    ps_inst AS "amount"
+    time,
+    '@ Long' AS "metric",
+    sum(
+        CASE WHEN amount <= 0
+          THEN 0
+        ELSE amount END
+    )        AS "amount"
   FROM
-    v_position;
+    w_exposure
+  GROUP BY
+    time
+  UNION
+  SELECT
+    time,
+    '@ Short' AS "metric",
+    sum(
+        CASE WHEN amount >= 0
+          THEN 0
+        ELSE amount END
+    )         AS "amount"
+  FROM
+    w_exposure
+  GROUP BY
+    time
+  UNION
+  SELECT
+    time,
+    '@@ Total'  AS "metric",
+    sum(amount) AS "amount"
+  FROM
+    w_exposure
+  GROUP BY
+    time;
 
 --
 -- Cash amount ratio of BTC / JPY.
