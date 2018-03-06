@@ -179,33 +179,65 @@ CREATE OR REPLACE VIEW v_position AS
 -- Shortcut for Grafana to fetch all assets in evaluation unit.
 --
 -- [Grafana]
--- SELECT time, metric, SUM(amount) FROM v_asset
+-- SELECT * FROM v_asset
 --   WHERE $__timeFilter(time)
---   GROUP BY time, metric ORDER BY time, metric
+--   ORDER BY time, metric
 --
 -- [Actual]
--- SELECT time, metric, SUM(amount) FROM v_asset
+-- SELECT * FROM v_asset
 --   WHERE extract(epoch from time) BETWEEN extract(epoch from now() - INTERVAL '1 day') AND extract(epoch from now())
---   GROUP BY time, metric ORDER BY time, metric
+--   ORDER BY time, metric
 --
 CREATE OR REPLACE VIEW v_asset AS
+  WITH w_asset AS (
+    SELECT
+      bc_time AS "time",
+      bc_site AS "site",
+      ac_disp AS "disp",
+      ev_amnt AS "amnt"
+    FROM
+      v_balance
+    WHERE
+      ac_disp IS NOT NULL
+    UNION
+    SELECT
+      ps_time      AS "time",
+      ps_site      AS "site",
+      pr_disp      AS "disp",
+      ps_eval_fund AS "amnt"
+    FROM
+      v_position
+    WHERE
+      pr_disp IS NOT NULL
+  )
   SELECT
-    bc_time AS "time",
-    ac_disp AS "metric",
-    ev_amnt AS "amount"
+    time,
+    disp      AS "metric",
+    sum(amnt) AS "amount"
   FROM
-    v_balance
-  WHERE
-    ac_disp IS NOT NULL
+    w_asset
+  GROUP BY
+    time,
+    disp
   UNION
   SELECT
-    ps_time      AS "time",
-    pr_disp      AS "metric",
-    ps_eval_fund AS "amount"
+    time,
+    '@ ' || site AS "metric",
+    sum(amnt)    AS "amount"
   FROM
-    v_position
-  WHERE
-    pr_disp IS NOT NULL;
+    w_asset
+  GROUP BY
+    time,
+    site
+  UNION
+  SELECT
+    time,
+    '@@ Total' AS "metric",
+    sum(amnt)  AS "amount"
+  FROM
+    w_asset
+  GROUP BY
+    time;
 
 --
 -- Shortcut for Grafana to fetch all exposures.
