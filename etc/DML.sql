@@ -1,5 +1,5 @@
 --
--- t_product
+-- Products
 --
 TRUNCATE TABLE t_product;
 
@@ -10,7 +10,7 @@ VALUES
   ('bitflyer', 'BTC_JPY', 'BTC', 'JPY', 'BFL BTC', NULL),
   ('bitflyer', 'ETH_BTC', 'ETH', 'BTC', 'BFL ETH', NULL),
   ('bitflyer', 'BCH_BTC', 'BCH', 'BTC', 'BFL BCH', NULL),
-  ('bitflyer', 'FX_BTC_JPY', 'BTC', 'JPY', 'BFL BFX', NULL),
+  ('bitflyer', 'FX_BTC_JPY', 'BFX', 'JPY', 'BFL BFX', NULL),
   ('bitmex', 'XBTUSD', 'BTC', 'USD', 'BMX XBT', NULL),
   ('btcbox', 'btc', 'BTC', 'JPY', 'BOX BTC', NULL),
   ('coincheck', 'btc_jpy', 'BTC', 'JPY', 'CCK BTC', NULL),
@@ -20,7 +20,7 @@ VALUES
   ('zaif', 'btc_jpy', 'BTC', 'JPY', 'ZIF BTC', NULL);
 
 --
--- t_evaluation
+-- Evaluation
 --
 TRUNCATE TABLE t_evaluation;
 
@@ -31,6 +31,7 @@ VALUES
   ('bitfinex', 'USD', 'oanda', 'USD_JPY', NULL, NULL),
   ('bitflyer', 'JPY', NULL, NULL, NULL, NULL),
   ('bitflyer', 'BTC', 'bitflyer', 'BTC_JPY', NULL, NULL),
+  ('bitflyer', 'BFX', 'bitflyer', 'FX_BTC_JPY', NULL, NULL),
   ('bitflyer', 'ETH', 'bitflyer', 'ETH_BTC', 'bitflyer', 'BTC_JPY'),
   ('bitflyer', 'BCH', 'bitflyer', 'BCH_BTC', 'bitflyer', 'BTC_JPY'),
   ('bitmex', 'USD', 'oanda', 'USD_JPY', NULL, NULL),
@@ -46,7 +47,7 @@ VALUES
   ('zaif', 'BTC', 'zaif', 'btc_jpy', NULL, NULL);
 
 --
--- t_evaluation
+-- Accounts
 --
 TRUNCATE TABLE t_account;
 

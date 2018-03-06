@@ -30,6 +30,51 @@ CREATE INDEX t_product_1
   );
 
 --
+-- Evaluation
+--
+DROP TABLE IF EXISTS t_evaluation;
+
+CREATE TABLE t_evaluation
+(
+  ev_site         VARCHAR(16) NOT NULL,
+  ev_unit         VARCHAR(16) NOT NULL,
+  ev_ticker_site  VARCHAR(16),
+  ev_ticker_code  VARCHAR(32),
+  ev_convert_site VARCHAR(16),
+  ev_convert_code VARCHAR(32)
+);
+
+ALTER TABLE t_evaluation
+  ADD CONSTRAINT t_evaluation_0
+PRIMARY KEY
+  (
+    ev_site,
+    ev_unit
+  );
+
+--
+-- Account
+--
+DROP TABLE IF EXISTS t_account;
+
+CREATE TABLE t_account
+(
+  ac_site VARCHAR(16) NOT NULL,
+  ac_acct VARCHAR(16) NOT NULL,
+  ac_unit VARCHAR(16) NOT NULL,
+  ac_disp VARCHAR(16) NOT NULL
+);
+
+ALTER TABLE t_account
+  ADD CONSTRAINT i_account_0
+PRIMARY KEY
+  (
+    ac_site,
+    ac_acct,
+    ac_unit
+  );
+
+--
 -- Timestamp
 --
 DROP TABLE IF EXISTS t_timestamp;
@@ -92,28 +137,6 @@ CREATE INDEX i_ticker_2
   );
 
 --
--- Account
---
-DROP TABLE IF EXISTS t_account;
-
-CREATE TABLE t_account
-(
-  ac_site VARCHAR(16) NOT NULL,
-  ac_acct VARCHAR(16) NOT NULL,
-  ac_unit VARCHAR(16) NOT NULL,
-  ac_disp VARCHAR(16) NOT NULL
-);
-
-ALTER TABLE t_account
-  ADD CONSTRAINT i_account_0
-PRIMARY KEY
-  (
-    ac_site,
-    ac_acct,
-    ac_unit
-  );
-
---
 -- Balance
 --
 DROP TABLE IF EXISTS t_balance;
@@ -147,29 +170,6 @@ CREATE INDEX i_balance_2
   ON t_balance
   (
     extract(EPOCH FROM bc_time)
-  );
-
---
--- Evaluation
---
-DROP TABLE IF EXISTS t_evaluation;
-
-CREATE TABLE t_evaluation
-(
-  ev_site         VARCHAR(16) NOT NULL,
-  ev_unit         VARCHAR(16) NOT NULL,
-  ev_ticker_site  VARCHAR(16),
-  ev_ticker_code  VARCHAR(32),
-  ev_convert_site VARCHAR(16),
-  ev_convert_code VARCHAR(32)
-);
-
-ALTER TABLE t_evaluation
-  ADD CONSTRAINT t_evaluation_0
-PRIMARY KEY
-  (
-    ev_site,
-    ev_unit
   );
 
 --
