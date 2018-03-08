@@ -1,8 +1,6 @@
 --
 -- Product
 --
-DROP TABLE IF EXISTS t_product;
-
 CREATE TABLE t_product
 (
   pr_site VARCHAR(16) NOT NULL,
@@ -24,8 +22,6 @@ PRIMARY KEY
 --
 -- Evaluation
 --
-DROP TABLE IF EXISTS t_evaluation;
-
 CREATE TABLE t_evaluation
 (
   ev_site         VARCHAR(16) NOT NULL,
@@ -47,8 +43,6 @@ PRIMARY KEY
 --
 -- Account
 --
-DROP TABLE IF EXISTS t_account;
-
 CREATE TABLE t_account
 (
   ac_site VARCHAR(16) NOT NULL,
@@ -69,8 +63,6 @@ PRIMARY KEY
 --
 -- Timestamp
 --
-DROP TABLE IF EXISTS t_timestamp;
-
 CREATE TABLE t_timestamp (
   ts_time TIMESTAMP NOT NULL
 );
@@ -85,8 +77,6 @@ PRIMARY KEY
 --
 -- Ticker
 --
-DROP TABLE IF EXISTS t_ticker;
-
 CREATE TABLE t_ticker
 (
   tk_site VARCHAR(16) NOT NULL,
@@ -117,8 +107,6 @@ CREATE INDEX i_ticker_1
 --
 -- Balance
 --
-DROP TABLE IF EXISTS t_balance;
-
 CREATE TABLE t_balance
 (
   bc_site VARCHAR(16) NOT NULL,
@@ -150,8 +138,6 @@ CREATE INDEX i_balance_1
 --
 -- Position
 --
-DROP TABLE IF EXISTS t_position;
-
 CREATE TABLE t_position
 (
   ps_site VARCHAR(16) NOT NULL,
@@ -181,8 +167,6 @@ CREATE INDEX i_position_1
 --
 -- Transaction
 --
-DROP TABLE IF EXISTS t_transaction;
-
 CREATE TABLE t_transaction
 (
   tx_site VARCHAR(16) NOT NULL,
