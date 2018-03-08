@@ -21,14 +21,6 @@ PRIMARY KEY
     pr_code
   );
 
-CREATE INDEX t_product_1
-  ON t_product
-  (
-    pr_site,
-    pr_inst,
-    pr_fund
-  );
-
 --
 -- Evaluation
 --
@@ -90,12 +82,6 @@ PRIMARY KEY
     ts_time
   );
 
-CREATE INDEX i_timestamp_1
-  ON t_timestamp
-  (
-    extract(EPOCH FROM ts_time)
-  );
-
 --
 -- Ticker
 --
@@ -128,14 +114,6 @@ CREATE INDEX i_ticker_1
     tk_code
   );
 
-CREATE INDEX i_ticker_2
-  ON t_ticker
-  (
-    extract(EPOCH FROM tk_time),
-    tk_site,
-    tk_code
-  );
-
 --
 -- Balance
 --
@@ -163,13 +141,10 @@ PRIMARY KEY
 CREATE INDEX i_balance_1
   ON t_balance
   (
-    bc_time
-  );
-
-CREATE INDEX i_balance_2
-  ON t_balance
-  (
-    extract(EPOCH FROM bc_time)
+    bc_time,
+    bc_site,
+    bc_acct,
+    bc_unit
   );
 
 --
@@ -198,13 +173,9 @@ PRIMARY KEY
 CREATE INDEX i_position_1
   ON t_position
   (
-    ps_time
-  );
-
-CREATE INDEX i_position_2
-  ON t_position
-  (
-    extract(EPOCH FROM ps_time)
+    ps_time,
+    ps_site,
+    ps_code
   );
 
 --
@@ -241,16 +212,6 @@ CREATE INDEX i_transaction_1
   ON t_transaction
   (
     tx_time,
-    tx_site,
-    tx_code,
-    tx_type,
-    tx_acct
-  );
-
-CREATE INDEX i_transaction_2
-  ON t_transaction
-  (
-    extract(EPOCH FROM tx_time),
     tx_site,
     tx_code,
     tx_type,
