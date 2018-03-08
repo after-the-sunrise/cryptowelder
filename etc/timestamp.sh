@@ -4,21 +4,19 @@
 # psql -d cryptowelder -c "`sh timestamp.sh`"
 #
 
-PREFIX="
+printf "
 WITH v_timestamp AS (
     SELECT date_trunc('minute', now() - UNNEST(
         ARRAY [
             INTERVAL '0 minute'"
 
-CONTENT=""
-
-for i in `seq 60`
+for i in `seq 1 60`
 do
-  CONTENT="${CONTENT},
+  printf "${CONTENT},
             INTERVAL '$i minute'"
 done
 
-SUFFIX="
+printf "
         ])) AS vt_time
 )
 INSERT INTO
@@ -34,6 +32,6 @@ INSERT INTO
         t_timestamp
       WHERE
         ts_time = vt_time
-  );"
+  );
+"
 
-echo -n "${PREFIX}${CONTENT}${SUFFIX}"
