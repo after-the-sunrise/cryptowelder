@@ -24,7 +24,11 @@ CREATE OR REPLACE VIEW v_evaluation AS
         AND
         t1.tk_code = e.ev_ticker_code
         AND
-        t1.tk_time = t.ts_time
+        t1.tk_time = (
+          SELECT max(tk_time)
+          FROM t_ticker
+          WHERE tk_site = e.ev_ticker_site AND tk_code = e.ev_ticker_code AND tk_time <= t.ts_time
+        )
     LEFT OUTER JOIN
     t_ticker t2
       ON
@@ -32,7 +36,11 @@ CREATE OR REPLACE VIEW v_evaluation AS
         AND
         t2.tk_code = e.ev_convert_code
         AND
-        t2.tk_time = t.ts_time;
+        t2.tk_time = (
+          SELECT max(tk_time)
+          FROM t_ticker
+          WHERE tk_site = e.ev_convert_site AND tk_code = e.ev_convert_code AND tk_time <= t.ts_time
+        );
 
 --
 -- Shortcut for product instrument and funding evaluation.
@@ -132,28 +140,32 @@ CREATE OR REPLACE VIEW v_ticker_ratio AS
 --
 CREATE OR REPLACE VIEW v_balance AS
   SELECT
-    b.*,
-    a.*,
     e.*,
-    b.bc_amnt * e.ev_rate AS ev_amnt
+    b.*,
+    b.bc_amnt * e.ev_rate AS ev_amnt,
+    a.*
   FROM
-    t_balance b
-    LEFT OUTER JOIN
-    t_account a
-      ON
-        b.bc_site = a.ac_site
-        AND
-        b.bc_acct = a.ac_acct
-        AND
-        b.bc_unit = a.ac_unit
-    LEFT OUTER JOIN
     v_evaluation e
+    JOIN
+    t_balance b
       ON
         b.bc_site = e.ev_site
         AND
         b.bc_unit = e.ev_unit
         AND
-        b.bc_time = e.ts_time;
+        b.bc_time = (
+          SELECT max(bc_time)
+          FROM t_balance
+          WHERE bc_site = e.ev_site AND bc_unit = e.ev_unit AND bc_time <= e.ts_time
+        )
+    LEFT OUTER JOIN
+    t_account a
+      ON
+        a.ac_site = b.bc_site
+        AND
+        a.ac_acct = b.bc_acct
+        AND
+        a.ac_unit = b.bc_unit;
 
 --
 -- Position with funding amount converted to evaluation unit.
