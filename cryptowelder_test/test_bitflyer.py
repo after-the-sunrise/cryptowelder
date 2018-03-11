@@ -70,6 +70,18 @@ class TestBitflyerWelder(TestCase):
         self.target._process_position.assert_not_called()
         self.target._process_transaction.assert_not_called()
 
+    def test__process_product(self):
+        self.target._process_product("BTCJPY14APR2017")
+
+        products = self.context.save_products.call_args[0][0]
+        self.assertEqual(1, len(products))
+        self.assertEqual('bitflyer', products[0].pr_site)
+        self.assertEqual('BTCJPY14APR2017', products[0].pr_code)
+        self.assertEqual('BTCJPY14APR2017', products[0].pr_inst)
+        self.assertEqual('JPY', products[0].pr_fund)
+        self.assertEqual('BF 20170414', products[0].pr_disp)
+        self.assertEqual('2017-04-14 07:00:00.000000 UTC', products[0].pr_expr.strftime(self.FORMAT))
+
     def test__process_ticker(self):
         self.target._fetch_special_quotation = MagicMock(return_value=None)
         self.context.save_tickers = MagicMock()
