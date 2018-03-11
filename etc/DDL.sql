@@ -5,8 +5,8 @@ CREATE TABLE IF NOT EXISTS t_product
 (
   pr_site VARCHAR(16) NOT NULL,
   pr_code VARCHAR(32) NOT NULL,
-  pr_inst VARCHAR(16) NOT NULL,
-  pr_fund VARCHAR(16) NOT NULL,
+  pr_inst VARCHAR(32) NOT NULL,
+  pr_fund VARCHAR(32) NOT NULL,
   pr_disp VARCHAR(16) NOT NULL,
   pr_expr TIMESTAMP
 );
@@ -27,7 +27,7 @@ PRIMARY KEY
 CREATE TABLE IF NOT EXISTS t_evaluation
 (
   ev_site         VARCHAR(16) NOT NULL,
-  ev_unit         VARCHAR(16) NOT NULL,
+  ev_unit         VARCHAR(32) NOT NULL,
   ev_ticker_site  VARCHAR(16),
   ev_ticker_code  VARCHAR(32),
   ev_convert_site VARCHAR(16),
