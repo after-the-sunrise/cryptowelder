@@ -144,10 +144,14 @@ CREATE OR REPLACE VIEW v_transaction AS
     p.ts_time,
     p.pr_site,
     p.pr_code,
-    sum(t.tx_inst) * p.ev_inst      AS "tx_net_inst",
-    sum(t.tx_fund) * p.ev_fund      AS "tx_net_fund",
-    sum(abs(t.tx_inst)) * p.ev_inst AS "tx_grs_inst",
-    sum(abs(t.tx_fund)) * p.ev_fund AS "tx_grs_fund"
+    sum(t.tx_inst)                  AS "tx_net_inst",
+    sum(t.tx_fund)                  AS "tx_net_fund",
+    sum(abs(t.tx_inst))             AS "tx_grs_inst",
+    sum(abs(t.tx_fund))             AS "tx_grs_fund",
+    sum(t.tx_inst) * p.ev_inst      AS "ev_net_inst",
+    sum(t.tx_fund) * p.ev_fund      AS "ev_net_fund",
+    sum(abs(t.tx_inst)) * p.ev_inst AS "ev_grs_inst",
+    sum(abs(t.tx_fund)) * p.ev_fund AS "ev_grs_fund"
   FROM
     v_product p
     LEFT OUTER JOIN
