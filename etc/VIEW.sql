@@ -161,6 +161,8 @@ CREATE OR REPLACE VIEW v_transaction AS
         AND
         t.tx_code = p.pr_code
         AND
+        t.tx_time <= p.ts_time
+        AND
         cast((t.tx_time + INTERVAL '9 hour') AT TIME ZONE 'Asia/Tokyo' AS DATE)
         =
         cast((p.ts_time + INTERVAL '9 hour') AT TIME ZONE 'Asia/Tokyo' AS DATE)
