@@ -1,6 +1,3 @@
---
--- Shortcut for evaluation rate.
---
 CREATE OR REPLACE VIEW v_evaluation AS
   SELECT
     t.*,
@@ -42,15 +39,12 @@ CREATE OR REPLACE VIEW v_evaluation AS
           WHERE tk_site = e.ev_convert_site AND tk_code = e.ev_convert_code AND tk_time <= t.ts_time
         );
 
---
--- Shortcut for product instrument and funding evaluation.
---
 CREATE OR REPLACE VIEW v_product AS
   SELECT
     ts.*,
     pr.*,
-    ei.ev_rate AS "ev_rate_inst",
-    ef.ev_rate AS "ev_rate_fund"
+    ei.ev_rate AS "ev_inst",
+    ef.ev_rate AS "ev_fund"
   FROM
     t_timestamp ts
     CROSS JOIN
@@ -72,25 +66,11 @@ CREATE OR REPLACE VIEW v_product AS
         AND
         ef.ev_unit = pr.pr_fund;
 
---
--- Tickers with evaluation price.
---
--- [Grafana]
--- SELECT pr_disp AS metric, tk_time AS time, tk_mtm AS price FROM v_ticker
---   WHERE $__timeFilter(tk_time)
---   AND pr_inst = 'BTC' ORDER BY tk_time, pr_disp
---
--- [Actual]
--- SELECT pr_disp AS metric, tk_time AS time, tk_mtm AS price FROM v_ticker
---   WHERE extract(epoch from tk_time)
---     BETWEEN extract(epoch from now() - INTERVAL '1 day') AND extract(epoch from now())
---   AND pr_inst = 'BTC' ORDER BY time, metric
---
 CREATE OR REPLACE VIEW v_ticker AS
   SELECT
     t.*,
     p.*,
-    COALESCE((t.tk_ask + t.tk_bid) * 0.5, t.tk_ltp) * p.ev_rate_fund AS tk_mtm
+    COALESCE((t.tk_ask + t.tk_bid) * 0.5, t.tk_ltp) * p.ev_fund AS tk_mtm
   FROM
     t_ticker t
     LEFT OUTER JOIN
@@ -102,48 +82,12 @@ CREATE OR REPLACE VIEW v_ticker AS
         AND
         p.ts_time = t.tk_time;
 
---
--- Ticker ratio with evaluation price.
---
--- [Grafana]
--- SELECT time, metric, ratio FROM v_ticker_ratio
---   WHERE $__timeFilter(time)
---   ORDER BY time, metric
---
--- [Actual]
--- SELECT time, metric, ratio FROM v_ticker_ratio
---   WHERE extract(epoch from time)
---     BETWEEN extract(epoch from now() - INTERVAL '1 day') AND extract(epoch from now())
---   ORDER BY time, metric
---
-CREATE OR REPLACE VIEW v_ticker_ratio AS
-  WITH w_ticker AS (
-      SELECT *
-      FROM v_ticker
-  )
-  SELECT
-    t1.tk_time                AS "time",
-    t1.pr_disp                AS "metric",
-    t1.tk_mtm / t2.tk_mtm - 1 AS "ratio"
-  FROM
-    w_ticker t1,
-    w_ticker t2
-  WHERE
-    t1.tk_time = t2.tk_time
-    AND
-    t1.pr_inst IN ('BTC', 'BFX')
-    AND
-    t2.tk_site = 'bitflyer' AND t2.tk_code = 'BTC_JPY';
-
---
--- Balance with amounts converted to evaluation unit.
---
 CREATE OR REPLACE VIEW v_balance AS
   SELECT
     e.*,
+    a.*,
     b.*,
-    b.bc_amnt * e.ev_rate AS ev_amnt,
-    a.*
+    b.bc_amnt * e.ev_rate AS ev_amnt
   FROM
     v_evaluation e
     JOIN
@@ -167,246 +111,58 @@ CREATE OR REPLACE VIEW v_balance AS
         AND
         a.ac_unit = b.bc_unit;
 
---
--- Position with funding amount converted to evaluation unit.
---
 CREATE OR REPLACE VIEW v_position AS
   SELECT
-    p.*,
-    t.*,
-    p.ps_inst * t.ev_rate_inst AS "ps_eval_inst",
-    p.ps_fund * t.ev_rate_fund AS "ps_eval_fund"
-  FROM
-    t_position p
-    LEFT OUTER JOIN
-    v_ticker t
-      ON
-        p.ps_site = t.tk_site
-        AND
-        p.ps_code = t.tk_code
-        AND
-        p.ps_time = t.tk_time;
-
---
--- Shortcut for Grafana to fetch all assets in evaluation unit.
---
--- [Grafana]
--- SELECT * FROM v_asset
---   WHERE $__timeFilter(time)
---   ORDER BY time, metric
---
--- [Actual]
--- SELECT * FROM v_asset
---   WHERE extract(epoch from time) BETWEEN extract(epoch from now() - INTERVAL '1 day') AND extract(epoch from now())
---   ORDER BY time, metric
---
-CREATE OR REPLACE VIEW v_asset AS
-  WITH w_asset AS (
-    SELECT
-      bc_time AS "time",
-      bc_site AS "site",
-      ac_disp AS "disp",
-      ev_amnt AS "amnt"
-    FROM
-      v_balance
-    WHERE
-      ac_disp IS NOT NULL
-    UNION
-    SELECT
-      ps_time      AS "time",
-      ps_site      AS "site",
-      pr_disp      AS "disp",
-      ps_eval_fund AS "amnt"
-    FROM
-      v_position
-    WHERE
-      pr_disp IS NOT NULL
-  )
-  SELECT
-    time,
-    disp      AS "metric",
-    sum(amnt) AS "amount"
-  FROM
-    w_asset
-  GROUP BY
-    time,
-    disp
-  UNION
-  SELECT
-    time,
-    '@ ' || site AS "metric",
-    sum(amnt)    AS "amount"
-  FROM
-    w_asset
-  GROUP BY
-    time,
-    site
-  UNION
-  SELECT
-    time,
-    '@@ Total' AS "metric",
-    sum(amnt)  AS "amount"
-  FROM
-    w_asset
-  GROUP BY
-    time;
-
---
--- Shortcut for Grafana to fetch all exposures.
---
--- [Grafana]
--- SELECT time, metric, amount FROM v_exposure
---   WHERE $__timeFilter(time)
---   ORDER BY time, metric
---
--- [Actual]
--- SELECT time, metric, amount FROM v_exposure
---   WHERE extract(epoch from time) BETWEEN extract(epoch from now() - INTERVAL '1 day') AND extract(epoch from now())
---   ORDER BY time, metric
---
-CREATE OR REPLACE VIEW v_exposure AS
-  WITH w_exposure AS (
-    SELECT
-      bc_time AS "time",
-      ac_disp AS "metric",
-      bc_unit AS "unit",
-      bc_amnt AS "amount"
-    FROM
-      v_balance
-    WHERE
-      bc_unit = 'BTC'
-    UNION
-    SELECT
-      ps_time AS "time",
-      pr_disp AS "metric",
-      pr_inst AS "unit",
-      ps_inst AS "amount"
-    FROM
-      v_position
-    WHERE
-      pr_inst IN ('BTC', 'BFX')
-  )
-  SELECT
-    time,
-    metric,
-    sum(amount) AS "amount"
-  FROM
-    w_exposure
-  GROUP BY
-    time,
-    metric
-  UNION
-  SELECT
-    time,
-    '@ Long' AS "metric",
-    sum(
-        CASE WHEN amount <= 0
-          THEN 0
-        ELSE amount END
-    )        AS "amount"
-  FROM
-    w_exposure
-  GROUP BY
-    time
-  UNION
-  SELECT
-    time,
-    '@ Short' AS "metric",
-    sum(
-        CASE WHEN amount >= 0
-          THEN 0
-        ELSE amount END
-    )         AS "amount"
-  FROM
-    w_exposure
-  GROUP BY
-    time
-  UNION
-  SELECT
-    time,
-    '@@ Total'  AS "metric",
-    sum(amount) AS "amount"
-  FROM
-    w_exposure
-  GROUP BY
-    time;
-
---
--- Cash amount ratio of BTC / JPY.
---
--- [Grafana]
--- SELECT time, ratio FROM v_ratio_cash_btc WHERE metric = 'bitflyer'
--- AND $__timeFilter(time)
--- ORDER BY time
---
--- [Actual]
--- SELECT time, ratio FROM v_ratio_cash_btc WHERE metric = 'bitflyer'
--- AND extract(epoch from time) BETWEEN extract(epoch from now() - INTERVAL '1 day') AND extract(epoch from now())
--- ORDER BY time
---
-CREATE OR REPLACE VIEW v_ratio_cash_btc AS
-  SELECT
-    b1.bc_site              AS "metric",
-    b1.bc_time              AS "time",
-    b1.ev_amnt / b2.ev_amnt AS "ratio"
-  FROM
-    v_balance b1,
-    v_balance b2
-  WHERE
-    b1.bc_site = b2.bc_site
-    AND
-    b1.bc_time = b2.bc_time
-    AND
-    (b1.bc_acct, b2.bc_acct) = ('CASH', 'CASH')
-    AND
-    (b1.bc_unit, b2.bc_unit) = ('BTC', 'JPY');
-
---
--- Transactions aggregated per timestamp.
--- TODO : FX evaluation price.
--- TODO : Current + Historical M-VIEW.
---
-CREATE OR REPLACE VIEW v_transaction AS
-  SELECT
-    pr.ts_time,
-    pr.pr_site,
-    pr.pr_code,
-    pr.pr_disp,
-    pr.ev_rate_inst,
-    pr.ev_rate_fund,
-    sum(abs(tx.tx_inst))                   AS tx_grs_inst,
-    sum(abs(tx.tx_fund))                   AS tx_grs_fund,
-    sum(tx.tx_inst)                        AS tx_net_inst,
-    sum(tx.tx_fund)                        AS tx_net_fund,
-    sum(abs(tx.tx_inst * pr.ev_rate_inst)) AS tx_amnt_grs_inst,
-    sum(abs(tx.tx_fund * pr.ev_rate_fund)) AS tx_amnt_grs_fund,
-    sum(tx.tx_inst * pr.ev_rate_inst)      AS tx_amnt_net_inst,
-    sum(tx.tx_fund * pr.ev_rate_fund)      AS tx_amnt_net_fund,
-    count(tx.*)                            AS tx_count
+    pr.*,
+    ps.*,
+    ps.ps_inst * pr.ev_inst AS "ps_amnt_inst",
+    ps.ps_fund * pr.ev_fund AS "ps_amnt_fund"
   FROM
     v_product pr
     LEFT OUTER JOIN
-    t_transaction tx
+    t_position ps
       ON
-        cast((tx.tx_time + INTERVAL '9 hour') AT TIME ZONE 'Asia/Tokyo' AS DATE)
-        =
-        cast((pr.ts_time + INTERVAL '9 hour') AT TIME ZONE 'Asia/Tokyo' AS DATE)
+        ps.ps_site = pr.pr_site
         AND
-        date_trunc('minute', tx.tx_time) <= pr.ts_time
+        ps.ps_code = pr.pr_code
         AND
-        tx.tx_site = pr.pr_site
-        AND
-        tx.tx_code = pr.pr_code
-        AND
-        tx.tx_type = 'TRADE'
+        ps.ps_time = (
+          SELECT max(ps_time)
+          FROM t_position
+          WHERE ps_site = pr.pr_site AND ps_code = pr.pr_code AND ps_time <= pr.ts_time
+        )
   WHERE
-    cast(extract(MINUTE FROM pr.ts_time) AS INTEGER) % 15 = 0
+    pr.pr_expr IS NULL
+    OR
+    pr.pr_expr >= ps.ps_time;
+
+CREATE OR REPLACE VIEW v_transaction AS
+  SELECT
+    cast(
+        (p.ts_time + INTERVAL '9 hour') AT TIME ZONE 'Asia/Tokyo' AS DATE
+    )                               AS "ts_date",
+    p.ts_time,
+    p.pr_site,
+    p.pr_code,
+    sum(t.tx_inst) * p.ev_inst      AS "tx_net_inst",
+    sum(t.tx_fund) * p.ev_fund      AS "tx_net_fund",
+    sum(abs(t.tx_inst)) * p.ev_inst AS "tx_grs_inst",
+    sum(abs(t.tx_fund)) * p.ev_fund AS "tx_grs_fund"
+  FROM
+    v_product p
+    LEFT OUTER JOIN
+    t_transaction t
+      ON
+        t.tx_site = p.pr_site
+        AND
+        t.tx_code = p.pr_code
+        AND
+        cast((t.tx_time + INTERVAL '9 hour') AT TIME ZONE 'Asia/Tokyo' AS DATE)
+        =
+        cast((p.ts_time + INTERVAL '9 hour') AT TIME ZONE 'Asia/Tokyo' AS DATE)
   GROUP BY
-    pr.ts_time,
-    pr.pr_site,
-    pr.pr_code,
-    pr.pr_disp,
-    pr.ev_rate_inst,
-    pr.ev_rate_fund
-  HAVING
-    count(tx.*) > 0;
+    p.ts_time,
+    p.pr_site,
+    p.pr_code,
+    p.ev_inst,
+    p.ev_fund;
