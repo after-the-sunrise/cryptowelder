@@ -12,8 +12,8 @@ from unittest.mock import MagicMock
 from pytz import utc
 from requests import get
 
-from cryptowelder.context import CryptowelderContext, Transaction, Ticker, Balance, Position, AccountType, UnitType, \
-    TransactionType
+from cryptowelder.context import CryptowelderContext, \
+    Product, Transaction, Ticker, Balance, Position, AccountType, UnitType, TransactionType
 
 
 class TestHander(BaseHTTPRequestHandler):
@@ -243,6 +243,48 @@ class TestCryptowelderContext(TestCase):
         self.assertEqual(0, result.microsecond)
         self.assertEqual('UTC', result.tzname())
 
+    def test_save_products(self):
+        self.target._create_all()
+
+        dt = datetime.now()
+
+        p1 = Product()
+        p1.pr_site = 'ps1'
+        p1.pr_code = 'pc1'
+        p1.pr_fund = 'pf1'
+        p1.pr_inst = 'pi1'
+        p1.pr_disp = 'pd1'
+        p1.pr_expr = dt
+
+        p2 = Product()
+        p2.pr_site = 'ps2'
+        p2.pr_code = 'pc2'
+
+        p3 = copy(p1)
+        p4 = copy(p2)
+
+        p5 = copy(p1)
+        p5.pr_code = None
+
+        # All new records
+        results = self.target.save_products([p1, p2])
+        self.assertEqual(len(results), 2)
+        self.assertTrue(p1 in results)
+        self.assertTrue(p2 in results)
+
+        # Existing records
+        results = self.target.save_products([p3, None, p4])
+        self.assertEqual(len(results), 0)
+
+        # PK Failure
+        with self.assertRaises(BaseException):
+            self.target.save_products([p5])
+
+        # Read-only
+        self.target._is_read_only = lambda: True
+        results = self.target.save_products([p1])
+        self.assertEqual(len(results), 0)
+
     def test_save_tickers(self):
         self.target._create_all()
 
@@ -466,6 +508,22 @@ class TestCryptowelderContext(TestCase):
         self.target._is_read_only = lambda: True
         results = self.target.save_transactions([t1])
         self.assertEqual(len(results), 0)
+
+    def test_Product(self):
+        value = Product()
+        self.assertEqual(
+            "{'table': 't_product', 'site': 'None', 'code': 'None', 'inst': 'None', 'fund': 'None', "
+            "'disp': 'None', 'expr': 'None'}", str(value))
+
+        value.pr_site = 'foo'
+        value.pr_code = 'bar'
+        value.pr_inst = 'hoge'
+        value.pr_fund = 'piyo'
+        value.pr_disp = 'test'
+        value.pr_expr = datetime.fromtimestamp(1234567890.123456, tz=utc)
+        self.assertEqual(
+            "{'table': 't_product', 'site': 'foo', 'code': 'bar', 'inst': 'hoge', 'fund': 'piyo', "
+            "'disp': 'test', 'expr': '2009-02-13 23:31:30.123456 UTC'}", str(value))
 
     def test_Ticker(self):
         value = Ticker()

@@ -196,6 +196,57 @@ class CryptowelderContext:
     def _is_read_only(self):
         return self.__read_only
 
+    def save_products(self, products):
+
+        candidates = {}
+
+        session = self.__session()
+
+        try:
+
+            for p in products if products is not None else []:
+
+                if self._is_read_only():
+                    self.__logger.debug("Skipping : %s", p)
+                    continue
+
+                if p is None:
+                    continue
+
+                first = session.query(Product).filter(
+                    Product.pr_site == p.pr_site,
+                    Product.pr_code == p.pr_code,
+                ).first()
+
+                if first is not None:
+                    continue  # Skip Existing
+
+                value = Product()
+                value.pr_site = p.pr_site
+                value.pr_code = p.pr_code
+                value.pr_inst = p.pr_inst
+                value.pr_fund = p.pr_fund
+                value.pr_disp = p.pr_disp
+                value.pr_expr = p.pr_expr.astimezone(utc) if p.pr_expr is not None else None
+
+                candidates[p] = value
+
+            if len(candidates) > 0:
+                session.add_all(candidates.values())
+                session.commit()
+
+        except BaseException as e:
+
+            session.rollback()
+
+            raise e
+
+        finally:
+
+            session.close()
+
+        return candidates.keys()
+
     def save_tickers(self, tickers):
 
         merged = []
@@ -419,6 +470,27 @@ class BaseEntity:
             return value.strftime('%Y-%m-%d %H:%M:%S.%f %Z')
 
         return str(value)
+
+
+class Product(CryptowelderContext.ENTITY_BASE, BaseEntity):
+    __tablename__ = "t_product"
+    pr_site = Column(String, primary_key=True)
+    pr_code = Column(String, primary_key=True)
+    pr_inst = Column(String)
+    pr_fund = Column(String)
+    pr_disp = Column(String)
+    pr_expr = Column(DateTime)
+
+    def __str__(self):
+        return BaseEntity._to_string({
+            'table': self.__tablename__,
+            'site': self.pr_site,
+            'code': self.pr_code,
+            'inst': self.pr_inst,
+            'fund': self.pr_fund,
+            'disp': self.pr_disp,
+            'expr': self.pr_expr,
+        })
 
 
 class Ticker(CryptowelderContext.ENTITY_BASE, BaseEntity):
