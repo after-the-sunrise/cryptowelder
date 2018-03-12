@@ -12,7 +12,7 @@ WITH v_timestamp AS (
 
 for i in `seq 1 60`
 do
-  printf "${CONTENT},
+  printf ",
             INTERVAL '$i minute'"
 done
 
@@ -34,4 +34,3 @@ INSERT INTO
         ts_time = vt_time
   );
 "
-
