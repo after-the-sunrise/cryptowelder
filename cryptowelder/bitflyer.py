@@ -9,7 +9,7 @@ from time import sleep
 from pytz import utc
 
 from cryptowelder.context import CryptowelderContext, \
-    Product, Ticker, Position, Balance, AccountType, UnitType, Transaction, TransactionType
+    Product, Evaluation, Ticker, Position, Balance, AccountType, UnitType, Transaction, TransactionType
 
 
 class BitflyerWelder:
@@ -77,6 +77,8 @@ class BitflyerWelder:
 
                 threads.append(Thread(target=self._process_product, args=(code,)))
 
+                threads.append(Thread(target=self._process_evaluation, args=(code,)))
+
                 threads.append(Thread(target=self._process_ticker, args=(code,)))
 
                 threads.append(Thread(target=self._process_position, args=(code,)))
@@ -119,6 +121,31 @@ class BitflyerWelder:
         except Exception as e:
 
             self.__logger.warn('Product Failure - %s : %s - %s', code, type(e), e.args)
+
+    def _process_evaluation(self, code):
+
+        try:
+
+            expiry = self._parse_expiry(code)
+
+            if expiry is None:
+                return
+
+            evaluation = Evaluation()
+            evaluation.ev_site = self._ID
+            evaluation.ev_unit = code
+            evaluation.ev_ticker_site = self._ID
+            evaluation.ev_ticker_code = code
+            evaluation.ev_convert_site = None
+            evaluation.ev_convert_code = None
+
+            self.__context.save_evaluations([evaluation])
+
+            self.__logger.debug('Evaluation : %s - %s', code, evaluation)
+
+        except Exception as e:
+
+            self.__logger.warn('Evaluation Failure - %s : %s - %s', code, type(e), e.args)
 
     def _process_ticker(self, code):
 

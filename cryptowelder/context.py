@@ -247,6 +247,57 @@ class CryptowelderContext:
 
         return candidates.keys()
 
+    def save_evaluations(self, evaluations):
+
+        candidates = {}
+
+        session = self.__session()
+
+        try:
+
+            for candidate in evaluations if evaluations is not None else []:
+
+                if self._is_read_only():
+                    self.__logger.debug("Skipping : %s", candidate)
+                    continue
+
+                if candidate is None:
+                    continue
+
+                first = session.query(Evaluation).filter(
+                    Evaluation.ev_site == candidate.ev_site,
+                    Evaluation.ev_unit == candidate.ev_unit,
+                ).first()
+
+                if first is not None:
+                    continue  # Skip Existing
+
+                value = Evaluation()
+                value.ev_site = candidate.ev_site
+                value.ev_unit = candidate.ev_unit
+                value.ev_ticker_site = candidate.ev_ticker_site
+                value.ev_ticker_code = candidate.ev_ticker_code
+                value.ev_convert_site = candidate.ev_convert_site
+                value.ev_convert_code = candidate.ev_convert_code
+
+                candidates[candidate] = value
+
+            if len(candidates) > 0:
+                session.add_all(candidates.values())
+                session.commit()
+
+        except BaseException as e:
+
+            session.rollback()
+
+            raise e
+
+        finally:
+
+            session.close()
+
+        return candidates.keys()
+
     def save_tickers(self, tickers):
 
         merged = []
@@ -490,6 +541,27 @@ class Product(CryptowelderContext.ENTITY_BASE, BaseEntity):
             'fund': self.pr_fund,
             'disp': self.pr_disp,
             'expr': self.pr_expr,
+        })
+
+
+class Evaluation(CryptowelderContext.ENTITY_BASE, BaseEntity):
+    __tablename__ = "t_evaluation"
+    ev_site = Column(String, primary_key=True)
+    ev_unit = Column(String, primary_key=True)
+    ev_ticker_site = Column(String)
+    ev_ticker_code = Column(String)
+    ev_convert_site = Column(String)
+    ev_convert_code = Column(String)
+
+    def __str__(self):
+        return BaseEntity._to_string({
+            'table': self.__tablename__,
+            'site': self.ev_site,
+            'unit': self.ev_unit,
+            't_site': self.ev_ticker_site,
+            't_code': self.ev_ticker_code,
+            'c_site': self.ev_convert_site,
+            'c_code': self.ev_convert_code,
         })
 
 

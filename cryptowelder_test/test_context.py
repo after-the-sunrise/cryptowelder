@@ -13,7 +13,7 @@ from pytz import utc
 from requests import get
 
 from cryptowelder.context import CryptowelderContext, \
-    Product, Transaction, Ticker, Balance, Position, AccountType, UnitType, TransactionType
+    Product, Evaluation, Transaction, Ticker, Balance, Position, AccountType, UnitType, TransactionType
 
 
 class TestHander(BaseHTTPRequestHandler):
@@ -285,6 +285,46 @@ class TestCryptowelderContext(TestCase):
         results = self.target.save_products([p1])
         self.assertEqual(len(results), 0)
 
+    def test_save_evaluations(self):
+        self.target._create_all()
+
+        v1 = Evaluation()
+        v1.ev_site = 's1'
+        v1.ev_unit = 'u1'
+        v1.ev_ticker_site = 'ts1'
+        v1.ev_ticker_code = 'tc1'
+        v1.ev_convert_site = 'cs1'
+        v1.ev_convert_code = 'cc1'
+
+        v2 = Evaluation()
+        v2.ev_site = 's2'
+        v2.ev_unit = 'c2'
+
+        v3 = copy(v1)
+        v4 = copy(v2)
+
+        v5 = copy(v1)
+        v5.ev_unit = None
+
+        # All new records
+        results = self.target.save_evaluations([v1, v2])
+        self.assertEqual(len(results), 2)
+        self.assertTrue(v1 in results)
+        self.assertTrue(v2 in results)
+
+        # Existing records
+        results = self.target.save_evaluations([v3, None, v4])
+        self.assertEqual(len(results), 0)
+
+        # PK Failure
+        with self.assertRaises(BaseException):
+            self.target.save_evaluations([v5])
+
+        # Read-only
+        self.target._is_read_only = lambda: True
+        results = self.target.save_evaluations([v1])
+        self.assertEqual(len(results), 0)
+
     def test_save_tickers(self):
         self.target._create_all()
 
@@ -524,6 +564,22 @@ class TestCryptowelderContext(TestCase):
         self.assertEqual(
             "{'table': 't_product', 'site': 'foo', 'code': 'bar', 'inst': 'hoge', 'fund': 'piyo', "
             "'disp': 'test', 'expr': '2009-02-13 23:31:30.123456 UTC'}", str(value))
+
+    def test_Evaluation(self):
+        value = Evaluation()
+        self.assertEqual(
+            "{'table': 't_evaluation', 'site': 'None', 'unit': 'None', "
+            "'t_site': 'None', 't_code': 'None', 'c_site': 'None', 'c_code': 'None'}", str(value))
+
+        value.ev_site = 'foo'
+        value.ev_unit = 'bar'
+        value.ev_ticker_site = 'hoge'
+        value.ev_ticker_code = 'piyo'
+        value.ev_convert_site = 'huga'
+        value.ev_convert_code = 'poyo'
+        self.assertEqual(
+            "{'table': 't_evaluation', 'site': 'foo', 'unit': 'bar', "
+            "'t_site': 'hoge', 't_code': 'piyo', 'c_site': 'huga', 'c_code': 'poyo'}", str(value))
 
     def test_Ticker(self):
         value = Ticker()

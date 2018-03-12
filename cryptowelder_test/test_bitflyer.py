@@ -71,7 +71,9 @@ class TestBitflyerWelder(TestCase):
         self.target._process_transaction.assert_not_called()
 
     def test__process_product(self):
+        # Valid
         self.target._process_product("BTCJPY14APR2017")
+        self.assertEquals(1, len(self.context.save_products.call_args_list))
 
         products = self.context.save_products.call_args[0][0]
         self.assertEqual(1, len(products))
@@ -81,6 +83,44 @@ class TestBitflyerWelder(TestCase):
         self.assertEqual('JPY', products[0].pr_fund)
         self.assertEqual('BF 20170414', products[0].pr_disp)
         self.assertEqual('2017-04-14 07:00:00.000000 UTC', products[0].pr_expr.strftime(self.FORMAT))
+
+        # Skip non-expiry
+        self.target._parse_expiry = MagicMock(return_value=None)
+        self.target._process_product("BTC_JPY")
+        self.target._parse_expiry.assert_called_once_with('BTC_JPY')
+        self.assertEquals(1, len(self.context.save_products.call_args_list))
+
+        # Exception
+        self.target._parse_expiry = MagicMock(side_effect=Exception('test'))
+        self.target._process_product("BTCJPY14APR2017")
+        self.target._parse_expiry.assert_called_once_with('BTCJPY14APR2017')
+        self.assertEquals(1, len(self.context.save_products.call_args_list))
+
+    def test__process_evaluation(self):
+        # Valid
+        self.target._process_evaluation("BTCJPY14APR2017")
+        self.assertEquals(1, len(self.context.save_evaluations.call_args_list))
+
+        evaluation = self.context.save_evaluations.call_args[0][0]
+        self.assertEqual(1, len(evaluation))
+        self.assertEqual('bitflyer', evaluation[0].ev_site)
+        self.assertEqual('BTCJPY14APR2017', evaluation[0].ev_unit)
+        self.assertEqual('bitflyer', evaluation[0].ev_ticker_site)
+        self.assertEqual('BTCJPY14APR2017', evaluation[0].ev_ticker_code)
+        self.assertIsNone(evaluation[0].ev_convert_site)
+        self.assertIsNone(evaluation[0].ev_convert_code)
+
+        # Skip non-expiry
+        self.target._parse_expiry = MagicMock(return_value=None)
+        self.target._process_evaluation("BTC_JPY")
+        self.target._parse_expiry.assert_called_once_with('BTC_JPY')
+        self.assertEquals(1, len(self.context.save_evaluations.call_args_list))
+
+        # Exception
+        self.target._parse_expiry = MagicMock(side_effect=Exception('test'))
+        self.target._process_evaluation("BTCJPY14APR2017")
+        self.target._parse_expiry.assert_called_once_with('BTCJPY14APR2017')
+        self.assertEquals(1, len(self.context.save_evaluations.call_args_list))
 
     def test__process_ticker(self):
         self.target._fetch_special_quotation = MagicMock(return_value=None)
