@@ -401,6 +401,8 @@ def main_historical():
         d = maturity.strftime('%d')
 
         product = 'BTCJPY%s%s%s' % (d, m, y)
+        target._process_product(product)
+        target._process_evaluation(product)
         target._process_ticker(product)
         target._process_transaction(product)
 
