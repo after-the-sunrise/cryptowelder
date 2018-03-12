@@ -237,6 +237,8 @@ class CryptowelderContext:
 
         except BaseException as e:
 
+            self.__logger.error('%s : %s', type(e), e.args)
+
             session.rollback()
 
             raise e
@@ -288,6 +290,8 @@ class CryptowelderContext:
 
         except BaseException as e:
 
+            self.__logger.error('%s : %s', type(e), e.args)
+
             session.rollback()
 
             raise e
@@ -332,6 +336,8 @@ class CryptowelderContext:
 
         except BaseException as e:
 
+            self.__logger.error('%s : %s', type(e), e.args)
+
             session.rollback()
 
             raise e
@@ -375,6 +381,8 @@ class CryptowelderContext:
 
         except BaseException as e:
 
+            self.__logger.error('%s : %s', type(e), e.args)
+
             session.rollback()
 
             raise e
@@ -417,6 +425,8 @@ class CryptowelderContext:
                 session.commit()
 
         except BaseException as e:
+
+            self.__logger.error('%s : %s', type(e), e.args)
 
             session.rollback()
 
@@ -475,6 +485,8 @@ class CryptowelderContext:
                 session.commit()
 
         except BaseException as e:
+
+            self.__logger.error('%s : %s', type(e), e.args)
 
             session.rollback()
 
