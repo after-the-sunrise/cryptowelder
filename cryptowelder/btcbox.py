@@ -84,7 +84,7 @@ class BtcboxWelder:
             return None
 
         with self.__lock:
-            sleep(0.001)  # Avoid duplicate nonce
+            sleep(0.005)  # Avoid duplicate nonce
 
             copied = dict(parameters)
             copied['key'] = apikey

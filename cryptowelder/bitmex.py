@@ -121,7 +121,7 @@ class BitmexWelder:
             return None
 
         with self.__lock:
-            sleep(0.001)  # Avoid duplicate nonce
+            sleep(0.005)  # Avoid duplicate nonce
 
             timestamp = str(int(self.__context.get_now().timestamp() * 1000))
 
