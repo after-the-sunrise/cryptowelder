@@ -225,3 +225,48 @@ CREATE INDEX i_transaction_1
     tx_type,
     tx_acct
   );
+
+--
+-- Metric
+--
+-- [Grafana]
+-- SELECT mc_time as time, mc_name as metric, sum(mc_amnt) FROM t_metric
+--   WHERE mc_type = 'test' AND $__timeFilter(mc_time)
+--   GROUP BY mc_time, mc_name
+--   ORDER BY mc_time, mc_name
+--
+-- [Actual]
+-- SELECT mc_time as time, mc_name as metric, sum(mc_amnt) as value FROM t_metric
+--   WHERE mc_type = 'test' AND extract(epoch from mc_time)
+--     BETWEEN extract(epoch from now() - INTERVAL '1 day') AND extract(epoch from now())
+--   GROUP BY mc_time, mc_name
+--   ORDER BY mc_time, mc_name
+--
+CREATE TABLE IF NOT EXISTS t_metric
+(
+  mc_type VARCHAR(32) NOT NULL,
+  mc_time TIMESTAMP   NOT NULL,
+  mc_name VARCHAR(32) NOT NULL,
+  mc_amnt DECIMAL(32, 16)
+);
+
+DROP INDEX IF EXISTS i_metric_0;
+
+ALTER TABLE t_metric
+  ADD CONSTRAINT i_metric_0
+PRIMARY KEY
+  (
+    mc_type,
+    mc_time,
+    mc_name
+  );
+
+DROP INDEX IF EXISTS i_metric_1;
+
+CREATE INDEX i_metric_1
+  ON t_metric
+  (
+    mc_type,
+    extract(EPOCH FROM mc_time),
+    mc_name
+  );
