@@ -64,7 +64,11 @@ CREATE OR REPLACE VIEW v_product AS
         AND
         ef.ev_site = pr.pr_site
         AND
-        ef.ev_unit = pr.pr_fund;
+        ef.ev_unit = pr.pr_fund
+  WHERE
+    pr.pr_expr IS NULL
+    OR
+    pr.pr_expr >= ts.ts_time;
 
 CREATE OR REPLACE VIEW v_ticker AS
   SELECT
@@ -130,20 +134,20 @@ CREATE OR REPLACE VIEW v_position AS
           SELECT max(ps_time)
           FROM t_position
           WHERE ps_site = pr.pr_site AND ps_code = pr.pr_code AND ps_time <= pr.ts_time
-        )
-  WHERE
-    pr.pr_expr IS NULL
-    OR
-    pr.pr_expr >= ps.ps_time;
+        );
 
 CREATE OR REPLACE VIEW v_transaction AS
   SELECT
     cast(
         (p.ts_time + INTERVAL '9 hour') AT TIME ZONE 'Asia/Tokyo' AS DATE
-    )                               AS "ts_date",
+    )                               AS "pr_date",
     p.ts_time,
     p.pr_site,
     p.pr_code,
+    p.pr_disp,
+    count(t.*)                      AS "tx_count",
+    min(t.tx_time)                  AS "tx_min_time",
+    max(t.tx_time)                  AS "tx_max_time",
     sum(t.tx_inst)                  AS "tx_net_inst",
     sum(t.tx_fund)                  AS "tx_net_fund",
     sum(abs(t.tx_inst))             AS "tx_grs_inst",
@@ -170,5 +174,6 @@ CREATE OR REPLACE VIEW v_transaction AS
     p.ts_time,
     p.pr_site,
     p.pr_code,
+    p.pr_disp,
     p.ev_inst,
     p.ev_fund;
