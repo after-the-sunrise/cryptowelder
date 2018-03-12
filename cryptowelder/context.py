@@ -155,7 +155,7 @@ class CryptowelderContext:
 
                     else:
 
-                        self.__logger.warning('[%s:%s] %s - %s', r.status_code, r.reason, label, r.text)
+                        self.__logger.error('[%s:%s] %s - %s', r.status_code, r.reason, label, r.text)
 
                     break
 
@@ -167,7 +167,7 @@ class CryptowelderContext:
 
         else:
 
-            self.__logger.warning('Request retry exceeded : %s', label)
+            self.__logger.error('Request retry exceeded : %s', label)
 
         return result
 
