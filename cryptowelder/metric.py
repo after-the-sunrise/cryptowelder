@@ -2,7 +2,7 @@ from datetime import timedelta
 from threading import Thread
 from time import sleep
 
-from cryptowelder.context import CryptowelderContext
+from cryptowelder.context import CryptowelderContext, Timestamp
 
 
 class MetricWelder:
@@ -54,7 +54,14 @@ class MetricWelder:
         while len(values) < count:
             values.append(values[0] - timedelta(minutes=len(values)))
 
-        self.__context.save_timestamps(values)
+        timestamps = []
+
+        for v in values:
+            t = Timestamp()
+            t.ts_time = v
+            timestamps.append(t)
+
+        self.__context.save_timestamps(timestamps)
 
 
 def main():
