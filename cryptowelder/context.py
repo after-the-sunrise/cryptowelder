@@ -539,6 +539,50 @@ class CryptowelderContext:
 
         return merged
 
+    def save_metrics(self, metrics):
+
+        merged = []
+
+        session = self.__session()
+
+        try:
+
+            for m in metrics if metrics is not None else []:
+
+                if self._is_read_only():
+                    self.__logger.debug("Skipping : %s", m)
+                    continue
+
+                if m is None:
+                    continue
+
+                value = Metric()
+                value.mc_type = m.mc_type
+                value.mc_time = m.mc_time.astimezone(utc)
+                value.mc_name = m.mc_name
+                value.mc_amnt = m.mc_amnt
+
+                session.merge(value)
+
+                merged.append(m)
+
+            if len(merged) > 0:
+                session.commit()
+
+        except BaseException as e:
+
+            self.__logger.error('%s : %s', type(e), e.args)
+
+            session.rollback()
+
+            raise e
+
+        finally:
+
+            session.close()
+
+        return merged
+
 
 class AccountType(Enum):
     CASH = auto()
@@ -712,4 +756,21 @@ class Timestamp(CryptowelderContext.ENTITY_BASE, BaseEntity):
         return BaseEntity._to_string({
             'table': self.__tablename__,
             'time': self.ts_time,
+        })
+
+
+class Metric(CryptowelderContext.ENTITY_BASE, BaseEntity):
+    __tablename__ = 't_metric'
+    mc_type = Column(String, primary_key=True)
+    mc_time = Column(DateTime, primary_key=True)
+    mc_name = Column(String, primary_key=True)
+    mc_amnt = Column(Numeric)
+
+    def __str__(self):
+        return BaseEntity._to_string({
+            'table': self.__tablename__,
+            'type': self.mc_type,
+            'time': self.mc_time,
+            'name': self.mc_name,
+            'amnt': self.mc_amnt,
         })

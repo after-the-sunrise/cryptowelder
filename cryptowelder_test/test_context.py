@@ -12,7 +12,7 @@ from unittest.mock import MagicMock
 from pytz import utc
 from requests import get
 
-from cryptowelder.context import CryptowelderContext, Timestamp, \
+from cryptowelder.context import CryptowelderContext, Timestamp, Metric, \
     Product, Evaluation, Transaction, Ticker, Balance, Position, AccountType, UnitType, TransactionType
 
 
@@ -583,6 +583,53 @@ class TestCryptowelderContext(TestCase):
         results = self.target.save_timestamps([t1])
         self.assertEqual(len(results), 0)
 
+    def test_save_metrics(self):
+        self.target._create_all()
+
+        dt = datetime.now()
+
+        m1 = Metric()
+        m1.mc_type = 't1'
+        m1.mc_time = dt + timedelta(minutes=1)
+        m1.mc_name = 'n1'
+        m1.mc_amnt = Decimal('1.2')
+
+        m2 = Metric()
+        m2.mc_type = 't2'
+        m2.mc_time = dt + timedelta(minutes=2)
+        m2.mc_name = 'n2'
+        m2.mc_amnt = Decimal('2.3')
+
+        m3 = copy(m1)
+        m3.mc_amnt = Decimal('3.4')
+
+        m4 = copy(m2)
+        m4.mc_amnt = Decimal('4.5')
+
+        m5 = copy(m1)
+        m5.mc_name = None
+
+        # All new records
+        results = self.target.save_metrics([m1, m2])
+        self.assertEqual(len(results), 2)
+        self.assertTrue(m1 in results)
+        self.assertTrue(m2 in results)
+
+        # Existing records
+        results = self.target.save_metrics([m3, None, m4])
+        self.assertEqual(len(results), 2)
+        self.assertTrue(m3 in results)
+        self.assertTrue(m4 in results)
+
+        # PK Failure
+        with self.assertRaises(BaseException):
+            self.target.save_metrics([m5])
+
+        # Read-only
+        self.target._is_read_only = lambda: True
+        results = self.target.save_metrics([m1])
+        self.assertEqual(len(results), 0)
+
     def test_Product(self):
         value = Product()
         self.assertEqual(
@@ -683,6 +730,18 @@ class TestCryptowelderContext(TestCase):
 
         value.ts_time = datetime.fromtimestamp(1234567890.123456, tz=utc)
         self.assertEqual("{'table': 't_timestamp', 'time': '2009-02-13 23:31:30.123456 UTC'}", str(value))
+
+    def test_Metric(self):
+        value = Metric()
+        self.assertEqual("{'table': 't_metric', 'type': 'None', "
+                         "'time': 'None', 'name': 'None', 'amnt': 'None'}", str(value))
+
+        value.mc_type = 'foo'
+        value.mc_time = datetime.fromtimestamp(1234567890.123456, tz=utc)
+        value.mc_name = 'bar'
+        value.mc_amnt = Decimal('1.2')
+        self.assertEqual("{'table': 't_metric', 'type': 'foo', "
+                         "'time': '2009-02-13 23:31:30.123456 UTC', 'name': 'bar', 'amnt': '1.2'}", str(value))
 
 
 if __name__ == '__main__':
