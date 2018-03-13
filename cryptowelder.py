@@ -18,6 +18,8 @@ def main():
     cryptowelder.QuoinexWelder(context).run()
     cryptowelder.ZaifWelder(context).run()
 
+    cryptowelder.MetricWelder(context).run()
+
 
 if __name__ == '__main__':
     main()

@@ -12,7 +12,7 @@ from unittest.mock import MagicMock
 from pytz import utc
 from requests import get
 
-from cryptowelder.context import CryptowelderContext, \
+from cryptowelder.context import CryptowelderContext, Timestamp, \
     Product, Evaluation, Transaction, Ticker, Balance, Position, AccountType, UnitType, TransactionType
 
 
@@ -549,6 +549,40 @@ class TestCryptowelderContext(TestCase):
         results = self.target.save_transactions([t1])
         self.assertEqual(len(results), 0)
 
+    def test_save_timestamps(self):
+        self.target._create_all()
+
+        dt = datetime.now()
+
+        t1 = Timestamp()
+        t1.ts_time = dt + timedelta(minutes=1)
+
+        t2 = Timestamp()
+        t2.ts_time = dt + timedelta(minutes=2)
+
+        t3 = Timestamp()
+        t3.ts_time = None
+
+        # All new records
+        results = self.target.save_timestamps([t1, None, t2])
+        self.assertEqual(len(results), 2)
+        self.assertTrue(t1 in results)
+        self.assertTrue(t2 in results)
+
+        # Existing records
+        results = self.target.save_timestamps([t2])
+        self.assertEqual(len(results), 1)
+        self.assertTrue(t2 in results)
+
+        # PK Failure
+        with self.assertRaises(BaseException):
+            self.target.save_timestamps([t3])
+
+        # Read-only
+        self.target._is_read_only = lambda: True
+        results = self.target.save_timestamps([t1])
+        self.assertEqual(len(results), 0)
+
     def test_Product(self):
         value = Product()
         self.assertEqual(
@@ -642,6 +676,13 @@ class TestCryptowelderContext(TestCase):
                          "'acct': 'CASH', 'oid': 'o_id', 'eid': 'e_id', "
                          "'time': '2009-02-13 23:31:30.123456 UTC', "
                          "'instrument': '1.2', 'funding': '2.3'}", str(value))
+
+    def test_Timestamp(self):
+        value = Timestamp()
+        self.assertEqual("{'table': 't_timestamp', 'time': 'None'}", str(value))
+
+        value.ts_time = datetime.fromtimestamp(1234567890.123456, tz=utc)
+        self.assertEqual("{'table': 't_timestamp', 'time': '2009-02-13 23:31:30.123456 UTC'}", str(value))
 
 
 if __name__ == '__main__':

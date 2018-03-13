@@ -5,6 +5,7 @@ from cryptowelder import bitmex
 from cryptowelder import btcbox
 from cryptowelder import coincheck
 from cryptowelder import context
+from cryptowelder import metric
 from cryptowelder import oanda
 from cryptowelder import poloniex
 from cryptowelder import quoinex
@@ -22,3 +23,5 @@ OandaWelder = oanda.OandaWelder
 PoloniexWelder = poloniex.PoloniexWelder
 QuoinexWelder = quoinex.QuoinexWelder
 ZaifWelder = zaif.ZaifWelder
+
+MetricWelder = metric.MetricWelder
