@@ -662,6 +662,23 @@ class Evaluation(CryptowelderContext.ENTITY_BASE, BaseEntity):
         })
 
 
+class Account(CryptowelderContext.ENTITY_BASE, BaseEntity):
+    __tablename__ = "t_account"
+    ac_site = Column(String, primary_key=True)
+    ac_acct = Column(String, primary_key=True)
+    ac_unit = Column(String, primary_key=True)
+    ac_disp = Column(String)
+
+    def __str__(self):
+        return BaseEntity._to_string({
+            'table': self.__tablename__,
+            'site': self.ac_site,
+            'acct': self.ac_acct,
+            'unit': self.ac_unit,
+            'disp': self.ac_disp,
+        })
+
+
 class Ticker(CryptowelderContext.ENTITY_BASE, BaseEntity):
     __tablename__ = "t_ticker"
     tk_site = Column(String, primary_key=True)

@@ -13,7 +13,7 @@ from pytz import utc
 from requests import get
 
 from cryptowelder.context import CryptowelderContext, Timestamp, Metric, \
-    Product, Evaluation, Transaction, Ticker, Balance, Position, AccountType, UnitType, TransactionType
+    Product, Evaluation, Account, Transaction, Ticker, Balance, Position, AccountType, UnitType, TransactionType
 
 
 class TestHander(BaseHTTPRequestHandler):
@@ -661,6 +661,18 @@ class TestCryptowelderContext(TestCase):
         self.assertEqual(
             "{'table': 't_evaluation', 'site': 'foo', 'unit': 'bar', "
             "'t_site': 'hoge', 't_code': 'piyo', 'c_site': 'huga', 'c_code': 'poyo'}", str(value))
+
+    def test_Account(self):
+        value = Account()
+        self.assertEqual(
+            "{'table': 't_account', 'site': 'None', 'acct': 'None', 'unit': 'None', 'disp': 'None'}", str(value))
+
+        value.ac_site = 'foo'
+        value.ac_acct = 'bar'
+        value.ac_unit = 'hoge'
+        value.ac_disp = 'piyo'
+        self.assertEqual(
+            "{'table': 't_account', 'site': 'foo', 'acct': 'bar', 'unit': 'hoge', 'disp': 'piyo'}", str(value))
 
     def test_Ticker(self):
         value = Ticker()
