@@ -12,9 +12,10 @@ from time import sleep
 import prometheus_client
 from pytz import utc
 from requests import get, post
-from sqlalchemy import create_engine, Column, String, DateTime, Numeric, Enum as Type
+from sqlalchemy import create_engine, Column, String, DateTime, Numeric, Enum as Type, and_
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker, scoped_session
+from sqlalchemy.orm import sessionmaker, scoped_session, aliased
+from sqlalchemy.sql import functions
 
 
 class CryptowelderContext:
@@ -582,6 +583,77 @@ class CryptowelderContext:
             session.close()
 
         return merged
+
+    def fetch_balances(self, time):
+
+        session = self.__session()
+
+        try:
+
+            tickers = session.query(
+                Ticker.tk_site,
+                Ticker.tk_code,
+                functions.max(Ticker.tk_time).label('tk_time')
+            ).filter(
+                Ticker.tk_time <= time
+            ).group_by(
+                Ticker.tk_site,
+                Ticker.tk_code,
+            ).subquery()
+
+            latest_1 = aliased(tickers)
+            latest_2 = aliased(tickers)
+            ticker_1 = aliased(Ticker, name='Ticker1')
+            ticker_2 = aliased(Ticker, name='Ticker2')
+
+            balances = session.query(
+                Balance.bc_site,
+                Balance.bc_acct,
+                Balance.bc_unit,
+                functions.max(Balance.bc_time).label('bc_time')
+            ).filter(
+                Balance.bc_time <= time
+            ).group_by(
+                Balance.bc_site,
+                Balance.bc_acct,
+                Balance.bc_unit,
+            ).subquery()
+
+            results = session.query(
+                Balance, Account, Evaluation, ticker_1, ticker_2
+            ).join(balances, and_(
+                Balance.bc_site == balances.c.bc_site,
+                Balance.bc_acct == balances.c.bc_acct,
+                Balance.bc_unit == balances.c.bc_unit,
+                Balance.bc_time == balances.c.bc_time,
+            )).join(Account, and_(
+                Account.ac_site == Balance.bc_site,
+                Account.ac_acct == Balance.bc_acct,
+                Account.ac_unit == Balance.bc_unit,
+            )).join(Evaluation, and_(
+                Evaluation.ev_site == Balance.bc_site,
+                Evaluation.ev_unit == Balance.bc_unit,
+            )).outerjoin(latest_1, and_(
+                latest_1.c.tk_site == Evaluation.ev_ticker_site,
+                latest_1.c.tk_code == Evaluation.ev_ticker_code,
+            )).outerjoin(latest_2, and_(
+                latest_2.c.tk_site == Evaluation.ev_convert_site,
+                latest_2.c.tk_code == Evaluation.ev_convert_code,
+            )).outerjoin(ticker_1, and_(
+                ticker_1.tk_site == latest_1.c.tk_site,
+                ticker_1.tk_code == latest_1.c.tk_code,
+                ticker_1.tk_time == latest_1.c.tk_time,
+            )).outerjoin(ticker_2, and_(
+                ticker_2.tk_site == latest_2.c.tk_site,
+                ticker_2.tk_code == latest_2.c.tk_code,
+                ticker_2.tk_time == latest_2.c.tk_time,
+            )).all()
+
+        finally:
+
+            session.close()
+
+        return results
 
 
 class AccountType(Enum):
