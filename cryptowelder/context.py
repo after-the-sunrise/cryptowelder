@@ -1,3 +1,4 @@
+from collections import namedtuple
 from configparser import ConfigParser
 from datetime import datetime, timedelta
 from decimal import Decimal
@@ -653,7 +654,9 @@ class CryptowelderContext:
 
             session.close()
 
-        return results
+        dto = namedtuple('BalanceDto', ('balance', 'account', 'evaluation', 'ticker', 'converter'))
+
+        return [dto(balance=r[0], account=r[1], evaluation=r[2], ticker=r[3], converter=r[4]) for r in results]
 
 
 class AccountType(Enum):
