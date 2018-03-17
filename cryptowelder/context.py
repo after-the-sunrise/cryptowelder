@@ -13,7 +13,7 @@ from time import sleep
 import prometheus_client
 from pytz import utc
 from requests import get, post
-from sqlalchemy import create_engine, Column, String, DateTime, Numeric, Enum as Type, and_, or_
+from sqlalchemy import create_engine, Column, String, DateTime, Numeric, Enum as Type, and_, or_, func
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, scoped_session, aliased
 from sqlalchemy.sql import functions
@@ -633,7 +633,7 @@ class CryptowelderContext:
 
         dto = namedtuple('TickerDto', ('ticker', 'product', 'inst', 'fund'))
 
-        return [dto(ticker=r[0], product=r[1], inst=r[2], fund=r[3]) for r in results]
+        return [dto(*r) for r in results]
 
     def fetch_balances(self, time):
 
@@ -676,7 +676,7 @@ class CryptowelderContext:
 
         dto = namedtuple('BalanceDto', ('balance', 'account', 'evaluation'))
 
-        return [dto(balance=r[0], account=r[1], evaluation=r[2]) for r in results]
+        return [dto(*r) for r in results]
 
     def fetch_positions(self, time):
 
@@ -725,7 +725,64 @@ class CryptowelderContext:
 
         dto = namedtuple('PositionDto', ('position', 'product', 'inst', 'fund'))
 
-        return [dto(position=r[0], product=r[1], inst=r[2], fund=r[3]) for r in results]
+        return [dto(*r) for r in results]
+
+    def fetch_transactions(self, start_time, end_time):
+
+        session = self.__session()
+
+        try:
+
+            transactions = session.query(
+                Transaction.tx_site,
+                Transaction.tx_code,
+                Transaction.tx_type,
+                Transaction.tx_acct,
+                functions.count(Transaction.tx_time).label('tx_size'),
+                functions.min(Transaction.tx_time).label('tx_time_min'),
+                functions.max(Transaction.tx_time).label('tx_time_max'),
+                functions.sum(Transaction.tx_inst).label('tx_net_inst'),
+                functions.sum(Transaction.tx_fund).label('tx_net_fund'),
+                functions.sum(func.abs(Transaction.tx_inst)).label('tx_grs_inst'),
+                functions.sum(func.abs(Transaction.tx_fund)).label('tx_grs_fund'),
+            ).filter(
+                Transaction.tx_time >= start_time,
+                Transaction.tx_time < end_time
+            ).group_by(
+                Transaction.tx_site,
+                Transaction.tx_code,
+                Transaction.tx_type,
+                Transaction.tx_acct,
+            ).subquery()
+
+            inst = aliased(Evaluation, name='ev_inst')
+            fund = aliased(Evaluation, name='ev_fund')
+
+            results = session.query(
+                transactions, Product, inst, fund
+            ).join(Product, and_(
+                Product.pr_site == transactions.c.tx_site,
+                Product.pr_code == transactions.c.tx_code,
+            )).outerjoin(inst, and_(
+                inst.ev_site == Product.pr_site,
+                inst.ev_unit == Product.pr_inst,
+            )).outerjoin(fund, and_(
+                fund.ev_site == Product.pr_site,
+                fund.ev_unit == Product.pr_fund,
+            )).all()
+
+        finally:
+
+            session.close()
+
+        dto = namedtuple('TransactionDto', (
+            'tx_site', 'tx_code', 'tx_type', 'tx_acct',
+            'tx_size', 'tx_time_min', 'tx_time_max',
+            'tx_net_inst', 'tx_net_fund', 'tx_grs_inst', 'tx_grs_fund',
+            'product', 'ev_inst', 'ev_fund'
+        ))
+
+        return [dto(*r) for r in results]
 
 
 class AccountType(Enum):
