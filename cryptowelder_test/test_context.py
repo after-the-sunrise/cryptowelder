@@ -648,6 +648,14 @@ class TestCryptowelderContext(TestCase):
         # TODO : Test data
         self.target.fetch_positions(datetime.now())
 
+    def test_fetch_transactions(self):
+        self.target._create_all()
+
+        now = datetime.now()
+
+        # TODO : Test data
+        self.target.fetch_transactions(now - timedelta(days=1), now)
+
     def test_Product(self):
         value = Product()
         self.assertEqual(
