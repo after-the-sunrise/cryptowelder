@@ -239,7 +239,7 @@ class CryptowelderContext:
 
         except BaseException as e:
 
-            self.__logger.error('%s : %s', type(e), e.args)
+            self.__logger.error('Product - %s : %s', type(e), e.args)
 
             session.rollback()
 
@@ -292,7 +292,7 @@ class CryptowelderContext:
 
         except BaseException as e:
 
-            self.__logger.error('%s : %s', type(e), e.args)
+            self.__logger.error('Evaluation - %s : %s', type(e), e.args)
 
             session.rollback()
 
@@ -338,7 +338,7 @@ class CryptowelderContext:
 
         except BaseException as e:
 
-            self.__logger.error('%s : %s', type(e), e.args)
+            self.__logger.error('Ticker - %s : %s', type(e), e.args)
 
             session.rollback()
 
@@ -383,7 +383,7 @@ class CryptowelderContext:
 
         except BaseException as e:
 
-            self.__logger.error('%s : %s', type(e), e.args)
+            self.__logger.error('Balance - %s : %s', type(e), e.args)
 
             session.rollback()
 
@@ -428,7 +428,7 @@ class CryptowelderContext:
 
         except BaseException as e:
 
-            self.__logger.error('%s : %s', type(e), e.args)
+            self.__logger.error('Position - %s : %s', type(e), e.args)
 
             session.rollback()
 
@@ -488,7 +488,7 @@ class CryptowelderContext:
 
         except BaseException as e:
 
-            self.__logger.error('%s : %s', type(e), e.args)
+            self.__logger.error('Transaction - %s : %s', type(e), e.args)
 
             session.rollback()
 
@@ -529,7 +529,7 @@ class CryptowelderContext:
 
         except BaseException as e:
 
-            self.__logger.error('%s : %s', type(e), e.args)
+            self.__logger.error('Timestamp - %s : %s', type(e), e.args)
 
             session.rollback()
 
@@ -573,7 +573,7 @@ class CryptowelderContext:
 
         except BaseException as e:
 
-            self.__logger.error('%s : %s', type(e), e.args)
+            self.__logger.error('Metric - %s : %s', type(e), e.args)
 
             session.rollback()
 
