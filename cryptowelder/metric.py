@@ -1,8 +1,11 @@
 from collections import defaultdict
+from datetime import datetime
 from datetime import timedelta
 from decimal import Decimal
 from threading import Thread
 from time import sleep
+
+from pytz import utc
 
 from cryptowelder.context import CryptowelderContext, Timestamp, Metric
 
@@ -69,12 +72,15 @@ class MetricWelder:
         self.__context.save_timestamps(timestamps)
 
     def process_metric(self):
+        self.process_metrics(self.__context.get_now())
 
-        base = self.__context.get_now().replace(second=0, microsecond=0)
+    def process_metrics(self, base_time):
 
         count = int(self.__context.get_property(self._ID, 'timestamp', 3))
 
-        timestamps = [base - timedelta(minutes=i) for i in range(0, count)]
+        timestamps = [base_time.replace(second=0, microsecond=0) - timedelta(minutes=i) for i in range(0, count)]
+
+        self.__logger.debug('Metrics : %s', [t.strftime('%Y-%m-%d %H:%M') for t in timestamps])
 
         threads = []
 
@@ -331,6 +337,24 @@ def main():
 
     target = MetricWelder(context)
     target.run()
+
+
+def main_historical():
+    context = CryptowelderContext(config='~/.cryptowelder', debug=True)
+    context.launch_prometheus()
+
+    target = MetricWelder(context)
+
+    timestamp = datetime.now(utc).replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+
+    while True:
+
+        if timestamp >= datetime.now().astimezone(utc):
+            break
+
+        target.process_metrics(timestamp)
+
+        timestamp = timestamp + timedelta(minutes=3)
 
 
 if __name__ == '__main__':
