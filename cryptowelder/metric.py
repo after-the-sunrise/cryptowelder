@@ -50,7 +50,7 @@ class MetricWelder:
 
     def process_timestamp(self):
 
-        count = int(self.__context.get_property(self._ID, 'timestamp_count', 3))
+        count = int(self.__context.get_property(self._ID, 'timestamp', 3))
 
         values = [
             self.__context.get_now().replace(second=0, microsecond=0)
@@ -72,7 +72,7 @@ class MetricWelder:
 
         base = self.__context.get_now().replace(second=0, microsecond=0)
 
-        count = int(self.__context.get_property(self._ID, 'metric_count', 3))
+        count = int(self.__context.get_property(self._ID, 'timestamp', 3))
 
         timestamps = [base - timedelta(minutes=i) for i in range(0, count)]
 
@@ -98,7 +98,7 @@ class MetricWelder:
 
         price = self._ONE
 
-        if evaluation.ev_ticker_site is None or evaluation.ev_ticker_code is None:
+        if evaluation.ev_ticker_site is not None and evaluation.ev_ticker_code is not None:
 
             codes = prices.get(evaluation.ev_ticker_site)
 
@@ -109,7 +109,7 @@ class MetricWelder:
 
             price = price * p
 
-        if evaluation.ev_ticker_site is None or evaluation.ev_ticker_code is None:
+        if evaluation.ev_convert_site is not None and evaluation.ev_convert_code is not None:
 
             codes = prices.get(evaluation.ev_convert_site)
 
@@ -126,11 +126,11 @@ class MetricWelder:
 
         try:
 
-            tickers = self.__context.fetch_tickers(timestamp, include_expired=True)
+            values = self.__context.fetch_tickers(timestamp, include_expired=True)
 
             prices = defaultdict(lambda: dict())
 
-            for dto in tickers if tickers is not None else []:
+            for dto in values if values is not None else []:
 
                 ticker = dto.ticker
 
@@ -151,7 +151,7 @@ class MetricWelder:
 
             metrics = []
 
-            for dto in tickers if tickers is not None else []:
+            for dto in values if values is not None else []:
 
                 if dto.product is None:
                     continue
@@ -168,13 +168,13 @@ class MetricWelder:
                 else:
                     continue
 
-                rate = self.calculate_evaluation(dto.inst, prices)
+                rate = self.calculate_evaluation(dto.fund, prices)
 
                 if rate is None:
                     continue
 
                 metric = Metric()
-                metric.mc_type = 'tk'
+                metric.mc_type = 'ticker'
                 metric.mc_name = dto.product.pr_disp
                 metric.mc_time = timestamp
                 metric.mc_amnt = price * rate
@@ -189,13 +189,140 @@ class MetricWelder:
         return prices
 
     def process_balance(self, timestamp, prices):
-        pass  # TODO
+
+        try:
+
+            metrics = []
+
+            values = self.__context.fetch_balances(timestamp)
+
+            for dto in values if values is not None else []:
+
+                amount = dto.balance.bc_amnt
+
+                rate = self.calculate_evaluation(dto.evaluation, prices)
+
+                if dto.account is None or amount is None or rate is None:
+                    continue
+
+                metric = Metric()
+                metric.mc_type = 'balance'
+                metric.mc_name = dto.account.ac_disp
+                metric.mc_time = timestamp
+                metric.mc_amnt = amount * rate
+                metrics.append(metric)
+
+            self.__context.save_metrics(metrics)
+
+        except BaseException as e:
+
+            self.__logger.warn('Balance : %s : %s', type(e), e.args)
 
     def process_position(self, timestamp, prices):
-        pass  # TODO
+
+        try:
+
+            metrics = []
+
+            values = self.__context.fetch_positions(timestamp)
+
+            for dto in values if values is not None else []:
+
+                amount = dto.position.ps_fund
+
+                rate = self.calculate_evaluation(dto.fund, prices)
+
+                if dto.product is None or amount is None or rate is None:
+                    continue
+
+                metric = Metric()
+                metric.mc_type = 'position@upl'
+                metric.mc_name = dto.product.pr_disp
+                metric.mc_time = timestamp
+                metric.mc_amnt = amount * rate
+                metrics.append(metric)
+
+            for dto in values if values is not None else []:
+
+                amount = dto.position.ps_inst
+
+                rate = self.calculate_evaluation(dto.inst, prices)
+
+                if dto.product is None or amount is None or rate is None:
+                    continue
+
+                metric = Metric()
+                metric.mc_type = 'position@qty'
+                metric.mc_name = dto.product.pr_disp
+                metric.mc_time = timestamp
+                metric.mc_amnt = amount * rate
+                metrics.append(metric)
+
+            self.__context.save_metrics(metrics)
+
+        except BaseException as e:
+
+            self.__logger.warn('Position : %s : %s', type(e), e.args)
 
     def process_transaction(self, timestamp, prices):
-        pass  # TODO
+
+        try:
+
+            metrics = []
+
+            offset = timedelta(minutes=int(self.__context.get_property(self._ID, 'offset', -9 * 60)))
+
+            items = {
+                'DAY': timestamp.replace(microsecond=0, second=0, minute=0, hour=0) + offset,
+                'MTD': timestamp.replace(microsecond=0, second=0, minute=0, hour=0, day=1) + offset,
+                'YTD': timestamp.replace(microsecond=0, second=0, minute=0, hour=0, day=1, month=1) + offset,
+            }
+
+            for key, val in items.items():
+
+                values = self.__context.fetch_transactions(val, timestamp)
+
+                for dto in values if values is not None else []:
+
+                    amount = dto.tx_grs_fund
+
+                    rate = self.calculate_evaluation(dto.ev_fund, prices)
+
+                    if dto.product is None or amount is None or rate is None:
+                        continue
+
+                    metric = Metric()
+                    metric.mc_type = 'volume@' + key
+                    metric.mc_name = dto.product.pr_disp
+                    metric.mc_time = timestamp
+                    metric.mc_amnt = amount * rate
+                    metrics.append(metric)
+
+                for dto in values if values is not None else []:
+
+                    inst_qty = dto.tx_net_inst
+                    fund_qty = dto.tx_net_fund
+
+                    inst_rate = self.calculate_evaluation(dto.ev_inst, prices)
+                    fund_rate = self.calculate_evaluation(dto.ev_fund, prices)
+
+                    if dto.product is None \
+                            or inst_qty is None or fund_qty is None \
+                            or inst_rate is None or fund_rate is None:
+                        continue
+
+                    metric = Metric()
+                    metric.mc_type = 'trade@' + key
+                    metric.mc_name = dto.product.pr_disp
+                    metric.mc_time = timestamp
+                    metric.mc_amnt = (inst_qty * inst_rate) + (fund_qty * fund_rate)
+                    metrics.append(metric)
+
+            self.__context.save_metrics(metrics)
+
+        except BaseException as e:
+
+            self.__logger.warn('Transaction : %s : %s', type(e), e.args)
 
 
 def main():
