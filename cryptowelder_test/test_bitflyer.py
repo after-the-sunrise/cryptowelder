@@ -81,7 +81,7 @@ class TestBitflyerWelder(TestCase):
         self.assertEqual('BTCJPY14APR2017', products[0].pr_code)
         self.assertEqual('BTCJPY14APR2017', products[0].pr_inst)
         self.assertEqual('JPY', products[0].pr_fund)
-        self.assertEqual('BF 20170414', products[0].pr_disp)
+        self.assertEqual('BFL 20170414', products[0].pr_disp)
         self.assertEqual('2017-04-14 07:00:00.000000 UTC', products[0].pr_expr.strftime(self.FORMAT))
 
         # Skip non-expiry

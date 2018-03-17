@@ -97,7 +97,7 @@ class BitflyerWelder:
 
             self.__logger.warn('Market Failure : %s - %s', type(e), e.args)
 
-    def _process_product(self, code):
+    def _process_product(self, code, *, prefix='BFL '):
 
         try:
 
@@ -111,7 +111,7 @@ class BitflyerWelder:
             product.pr_code = code
             product.pr_inst = code
             product.pr_fund = UnitType.JPY.name
-            product.pr_disp = 'BF %s' % expiry.strftime('%Y%m%d')
+            product.pr_disp = prefix + expiry.strftime('%Y%m%d')
             product.pr_expr = expiry
 
             self.__context.save_products([product])
