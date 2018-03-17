@@ -630,14 +630,23 @@ class TestCryptowelderContext(TestCase):
         results = self.target.save_metrics([m1])
         self.assertEqual(len(results), 0)
 
+    def test_fetch_tickers(self):
+        self.target._create_all()
+
+        # TODO : Test data
+        self.target.fetch_balances(datetime.now())
+
     def test_fetch_balances(self):
         self.target._create_all()
 
-        dt = datetime.now()
+        # TODO : Test data
+        self.target.fetch_balances(datetime.now())
+
+    def test_fetch_positions(self):
+        self.target._create_all()
 
         # TODO : Test data
-
-        self.target.fetch_balances(dt)
+        self.target.fetch_positions(datetime.now())
 
     def test_Product(self):
         value = Product()

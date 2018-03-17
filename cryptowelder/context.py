@@ -13,7 +13,7 @@ from time import sleep
 import prometheus_client
 from pytz import utc
 from requests import get, post
-from sqlalchemy import create_engine, Column, String, DateTime, Numeric, Enum as Type, and_
+from sqlalchemy import create_engine, Column, String, DateTime, Numeric, Enum as Type, and_, or_
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, scoped_session, aliased
 from sqlalchemy.sql import functions
@@ -26,7 +26,7 @@ class CryptowelderContext:
     _FORMAT_ISO = compile('^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]+)?Z?$')
     _FORMAT_UNX = compile('^[0-9]+(\\.[0-9]+)?$')
 
-    def __init__(self, *, config=None, read_only=True, debug=True):
+    def __init__(self, *, config=None, read_only=True, debug=True, echo=False):
         # Read-only for testing
         self.__read_only = read_only
 
@@ -53,7 +53,7 @@ class CryptowelderContext:
 
         # Database
         database = self.get_property(self._SECTION, 'database', 'sqlite:///:memory:')
-        self.__engine = create_engine(database)
+        self.__engine = create_engine(database, echo=echo)
         self.__session = scoped_session(sessionmaker(bind=self.__engine))
         self.__logger.info('Database : %s (read_only=%s)', database, read_only)
 
@@ -585,13 +585,13 @@ class CryptowelderContext:
 
         return merged
 
-    def fetch_balances(self, time):
+    def fetch_tickers(self, time, *, include_expired=False):
 
         session = self.__session()
 
         try:
 
-            tickers = session.query(
+            latest = session.query(
                 Ticker.tk_site,
                 Ticker.tk_code,
                 functions.max(Ticker.tk_time).label('tk_time')
@@ -602,12 +602,46 @@ class CryptowelderContext:
                 Ticker.tk_code,
             ).subquery()
 
-            latest_1 = aliased(tickers)
-            latest_2 = aliased(tickers)
-            ticker_1 = aliased(Ticker, name='Ticker1')
-            ticker_2 = aliased(Ticker, name='Ticker2')
+            inst = aliased(Evaluation, name='ev_inst')
+            fund = aliased(Evaluation, name='ev_fund')
 
-            balances = session.query(
+            results = session.query(
+                Ticker, Product, inst, fund
+            ).join(latest, and_(
+                Ticker.tk_site == latest.c.tk_site,
+                Ticker.tk_code == latest.c.tk_code,
+                Ticker.tk_time == latest.c.tk_time,
+            )).join(Product, and_(
+                Product.pr_site == Ticker.tk_site,
+                Product.pr_code == Ticker.tk_code,
+                or_(
+                    Product.pr_expr.is_(None),
+                    Product.pr_expr >= time,
+                    include_expired,
+                ),
+            )).outerjoin(inst, and_(
+                inst.ev_site == Product.pr_site,
+                inst.ev_unit == Product.pr_inst,
+            )).outerjoin(fund, and_(
+                fund.ev_site == Product.pr_site,
+                fund.ev_unit == Product.pr_fund,
+            )).all()
+
+        finally:
+
+            session.close()
+
+        dto = namedtuple('TickerDto', ('ticker', 'product', 'inst', 'fund'))
+
+        return [dto(ticker=r[0], product=r[1], inst=r[2], fund=r[3]) for r in results]
+
+    def fetch_balances(self, time):
+
+        session = self.__session()
+
+        try:
+
+            latest = session.query(
                 Balance.bc_site,
                 Balance.bc_acct,
                 Balance.bc_unit,
@@ -621,12 +655,12 @@ class CryptowelderContext:
             ).subquery()
 
             results = session.query(
-                Balance, Account, Evaluation, ticker_1, ticker_2
-            ).join(balances, and_(
-                Balance.bc_site == balances.c.bc_site,
-                Balance.bc_acct == balances.c.bc_acct,
-                Balance.bc_unit == balances.c.bc_unit,
-                Balance.bc_time == balances.c.bc_time,
+                Balance, Account, Evaluation
+            ).join(latest, and_(
+                Balance.bc_site == latest.c.bc_site,
+                Balance.bc_acct == latest.c.bc_acct,
+                Balance.bc_unit == latest.c.bc_unit,
+                Balance.bc_time == latest.c.bc_time,
             )).join(Account, and_(
                 Account.ac_site == Balance.bc_site,
                 Account.ac_acct == Balance.bc_acct,
@@ -634,29 +668,64 @@ class CryptowelderContext:
             )).join(Evaluation, and_(
                 Evaluation.ev_site == Balance.bc_site,
                 Evaluation.ev_unit == Balance.bc_unit,
-            )).outerjoin(latest_1, and_(
-                latest_1.c.tk_site == Evaluation.ev_ticker_site,
-                latest_1.c.tk_code == Evaluation.ev_ticker_code,
-            )).outerjoin(latest_2, and_(
-                latest_2.c.tk_site == Evaluation.ev_convert_site,
-                latest_2.c.tk_code == Evaluation.ev_convert_code,
-            )).outerjoin(ticker_1, and_(
-                ticker_1.tk_site == latest_1.c.tk_site,
-                ticker_1.tk_code == latest_1.c.tk_code,
-                ticker_1.tk_time == latest_1.c.tk_time,
-            )).outerjoin(ticker_2, and_(
-                ticker_2.tk_site == latest_2.c.tk_site,
-                ticker_2.tk_code == latest_2.c.tk_code,
-                ticker_2.tk_time == latest_2.c.tk_time,
             )).all()
 
         finally:
 
             session.close()
 
-        dto = namedtuple('BalanceDto', ('balance', 'account', 'evaluation', 'ticker', 'converter'))
+        dto = namedtuple('BalanceDto', ('balance', 'account', 'evaluation'))
 
-        return [dto(balance=r[0], account=r[1], evaluation=r[2], ticker=r[3], converter=r[4]) for r in results]
+        return [dto(balance=r[0], account=r[1], evaluation=r[2]) for r in results]
+
+    def fetch_positions(self, time):
+
+        session = self.__session()
+
+        try:
+
+            latest = session.query(
+                Position.ps_site,
+                Position.ps_code,
+                functions.max(Position.ps_time).label('ps_time')
+            ).filter(
+                Position.ps_time <= time
+            ).group_by(
+                Position.ps_site,
+                Position.ps_code,
+            ).subquery()
+
+            inst = aliased(Evaluation, name='ev_inst')
+            fund = aliased(Evaluation, name='ev_fund')
+
+            results = session.query(
+                Position, Product, inst, fund
+            ).join(latest, and_(
+                Position.ps_site == latest.c.ps_site,
+                Position.ps_code == latest.c.ps_code,
+                Position.ps_time == latest.c.ps_time,
+            )).join(Product, and_(
+                Product.pr_site == Position.ps_site,
+                Product.pr_code == Position.ps_code,
+                or_(
+                    Product.pr_expr.is_(None),
+                    Product.pr_expr >= time,
+                ),
+            )).outerjoin(inst, and_(
+                inst.ev_site == Product.pr_site,
+                inst.ev_unit == Product.pr_inst,
+            )).outerjoin(fund, and_(
+                fund.ev_site == Product.pr_site,
+                fund.ev_unit == Product.pr_fund,
+            )).all()
+
+        finally:
+
+            session.close()
+
+        dto = namedtuple('PositionDto', ('position', 'product', 'inst', 'fund'))
+
+        return [dto(position=r[0], product=r[1], inst=r[2], fund=r[3]) for r in results]
 
 
 class AccountType(Enum):
