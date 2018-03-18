@@ -736,8 +736,6 @@ class CryptowelderContext:
             transactions = session.query(
                 Transaction.tx_site,
                 Transaction.tx_code,
-                Transaction.tx_type,
-                Transaction.tx_acct,
                 functions.count(Transaction.tx_time).label('tx_size'),
                 functions.min(Transaction.tx_time).label('tx_time_min'),
                 functions.max(Transaction.tx_time).label('tx_time_max'),
@@ -751,8 +749,6 @@ class CryptowelderContext:
             ).group_by(
                 Transaction.tx_site,
                 Transaction.tx_code,
-                Transaction.tx_type,
-                Transaction.tx_acct,
             ).subquery()
 
             inst = aliased(Evaluation, name='ev_inst')
@@ -776,8 +772,7 @@ class CryptowelderContext:
             session.close()
 
         dto = namedtuple('TransactionDto', (
-            'tx_site', 'tx_code', 'tx_type', 'tx_acct',
-            'tx_size', 'tx_time_min', 'tx_time_max',
+            'tx_site', 'tx_code', 'tx_size', 'tx_time_min', 'tx_time_max',
             'tx_net_inst', 'tx_net_fund', 'tx_grs_inst', 'tx_grs_fund',
             'product', 'ev_inst', 'ev_fund'
         ))
