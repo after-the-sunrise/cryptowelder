@@ -349,12 +349,12 @@ def main_historical():
 
     while True:
 
+        timestamp = timestamp + timedelta(minutes=3)
+
         if timestamp >= datetime.now().astimezone(utc):
             break
 
         target.process_metrics(timestamp)
-
-        timestamp = timestamp + timedelta(minutes=3)
 
 
 if __name__ == '__main__':
