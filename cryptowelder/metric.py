@@ -20,7 +20,7 @@ class MetricWelder:
         self.__context = context
         self.__logger = context.get_logger(self)
         self.__threads = [
-            Thread(target=self._wrap, args=(self.process_timestamp, 15)),
+            Thread(target=self._wrap, args=(self.process_timestamp, 30)),
             Thread(target=self._wrap, args=(self.process_metric, 30)),
         ]
 
