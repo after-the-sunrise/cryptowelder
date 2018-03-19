@@ -87,7 +87,6 @@ class MetricWelder:
 
         for timestamp in timestamps:
             prices = self.process_ticker(timestamp)
-
             threads.append(Thread(target=self.process_balance, args=(timestamp, prices)))
             threads.append(Thread(target=self.process_position, args=(timestamp, prices)))
             threads.append(Thread(target=self.process_transaction_trade, args=(timestamp, prices)))
@@ -112,7 +111,7 @@ class MetricWelder:
 
             p = codes.get(evaluation.ev_ticker_code) if codes is not None else None
 
-            if p is None:
+            if p is None or p == self._ZERO:
                 return None
 
             price = price * p
@@ -123,7 +122,7 @@ class MetricWelder:
 
             p = codes.get(evaluation.ev_convert_code) if codes is not None else None
 
-            if p is None:
+            if p is None or p == self._ZERO:
                 return None
 
             price = price * p
@@ -131,6 +130,8 @@ class MetricWelder:
         return price
 
     def process_ticker(self, timestamp):
+
+        prices = None
 
         try:
 
@@ -141,42 +142,31 @@ class MetricWelder:
             for dto in values if values is not None else []:
 
                 ticker = dto.ticker
+                ask = ticker.tk_ask
+                bid = ticker.tk_bid
+                ltp = ticker.tk_ltp
 
-                if ticker.tk_ask is not None and ticker.tk_ask != self._ZERO \
-                        and ticker.tk_bid is not None and ticker.tk_bid != self._ZERO:
-                    price = (ticker.tk_ask + ticker.tk_bid) * self._HALF
-                elif ticker.tk_ltp is not None and ticker.tk_ltp != self._ZERO:
-                    price = ticker.tk_ltp
+                if ask is not None and ask != self._ZERO and bid is not None and bid != self._ZERO:
+                    price = (ask + bid) * self._HALF
+                elif ltp is not None and ltp != self._ZERO:
+                    price = ltp
                 else:
                     price = None
 
                 prices[ticker.tk_site][ticker.tk_code] = price
 
-        except BaseException as e:
-
-            self.__logger.warn('Ticker : %s : %s', type(e), e.args)
-
-            return None
-
-        try:
-
             metrics = []
 
             for dto in values if values is not None else []:
 
-                if dto.product is None:
+                price = prices[dto.ticker.tk_site][dto.ticker.tk_code]
+
+                if price is None or price == self._ZERO or dto.product is None:
                     continue
 
                 expiry = dto.product.pr_expr
 
                 if expiry is not None and expiry.astimezone(timestamp.tzinfo) < timestamp:
-                    continue
-
-                if dto.ticker.tk_ask is not None and dto.ticker.tk_bid is not None:
-                    price = (dto.ticker.tk_ask + dto.ticker.tk_bid) * self._HALF
-                elif dto.ticker.tk_ltp is not None:
-                    price = dto.ticker.tk_ltp
-                else:
                     continue
 
                 rate = self.calculate_evaluation(dto.fund, prices)
