@@ -14,6 +14,7 @@ class MetricWelder:
     _ID = 'metric'
     _ONE = Decimal('1.0')
     _HALF = Decimal('0.5')
+    _ZERO = Decimal('0.0')
 
     def __init__(self, context):
         self.__context = context
@@ -140,10 +141,13 @@ class MetricWelder:
 
                 ticker = dto.ticker
 
-                if ticker.tk_ask is not None and ticker.tk_bid is not None:
+                if ticker.tk_ask is not None and ticker.tk_ask != self._ZERO \
+                        and ticker.tk_bid is not None and ticker.tk_bid != self._ZERO:
                     price = (ticker.tk_ask + ticker.tk_bid) * self._HALF
-                else:
+                elif ticker.tk_ltp is not None and ticker.tk_ltp != self._ZERO:
                     price = ticker.tk_ltp
+                else:
+                    price = None
 
                 prices[ticker.tk_site][ticker.tk_code] = price
 
