@@ -90,7 +90,8 @@ class MetricWelder:
 
             threads.append(Thread(target=self.process_balance, args=(timestamp, prices)))
             threads.append(Thread(target=self.process_position, args=(timestamp, prices)))
-            threads.append(Thread(target=self.process_transaction, args=(timestamp, prices)))
+            threads.append(Thread(target=self.process_transaction_trade, args=(timestamp, prices)))
+            threads.append(Thread(target=self.process_transaction_volume, args=(timestamp, prices)))
 
         for t in threads:
             t.start()
@@ -274,39 +275,25 @@ class MetricWelder:
 
             self.__logger.warn('Position : %s : %s', type(e), e.args)
 
-    def process_transaction(self, timestamp, prices):
+    def process_transaction_trade(self, timestamp, prices):
 
         try:
 
             metrics = []
 
-            offset = timedelta(minutes=int(self.__context.get_property(self._ID, 'offset', -9 * 60)))
+            offset = timedelta(minutes=int(self.__context.get_property(self._ID, 'offset', 9 * 60)))
 
-            items = {
-                'DAY': timestamp.replace(microsecond=0, second=0, minute=0, hour=0) + offset,
-                'MTD': timestamp.replace(microsecond=0, second=0, minute=0, hour=0, day=1) + offset,
-                'YTD': timestamp.replace(microsecond=0, second=0, minute=0, hour=0, day=1, month=1) + offset,
+            t = timestamp + offset
+
+            windows = {
+                'DAY': t.replace(microsecond=0, second=0, minute=0, hour=0) - offset,
+                'MTD': t.replace(microsecond=0, second=0, minute=0, hour=0, day=1) - offset,
+                'YTD': t.replace(microsecond=0, second=0, minute=0, hour=0, day=1, month=1) - offset,
             }
 
-            for key, val in items.items():
+            for key, val in windows.items():
 
                 values = self.__context.fetch_transactions(val, timestamp)
-
-                for dto in values if values is not None else []:
-
-                    amount = dto.tx_grs_fund
-
-                    rate = self.calculate_evaluation(dto.ev_fund, prices)
-
-                    if dto.product is None or amount is None or rate is None:
-                        continue
-
-                    metric = Metric()
-                    metric.mc_type = 'volume@' + key
-                    metric.mc_name = dto.product.pr_disp
-                    metric.mc_time = timestamp
-                    metric.mc_amnt = amount * rate
-                    metrics.append(metric)
 
                 for dto in values if values is not None else []:
 
@@ -332,7 +319,45 @@ class MetricWelder:
 
         except BaseException as e:
 
-            self.__logger.warn('Transaction : %s : %s', type(e), e.args)
+            self.__logger.warn('Transaction (trade) : %s : %s', type(e), e.args)
+
+    def process_transaction_volume(self, timestamp, prices):
+
+        try:
+
+            metrics = []
+
+            windows = {
+                '12H': timestamp - timedelta(hours=12),
+                '01D': timestamp - timedelta(hours=24),
+                '30D': timestamp - timedelta(days=30),
+            }
+
+            for key, val in windows.items():
+
+                values = self.__context.fetch_transactions(val, timestamp)
+
+                for dto in values if values is not None else []:
+
+                    amount = dto.tx_grs_fund
+
+                    rate = self.calculate_evaluation(dto.ev_fund, prices)
+
+                    if dto.product is None or amount is None or rate is None:
+                        continue
+
+                    metric = Metric()
+                    metric.mc_type = 'volume@' + key
+                    metric.mc_name = dto.product.pr_disp
+                    metric.mc_time = timestamp
+                    metric.mc_amnt = amount * rate
+                    metrics.append(metric)
+
+            self.__context.save_metrics(metrics)
+
+        except BaseException as e:
+
+            self.__logger.warn('Transaction (volume) : %s : %s', type(e), e.args)
 
 
 def main():
