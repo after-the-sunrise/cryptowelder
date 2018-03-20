@@ -364,7 +364,9 @@ def main_historical():
 
     target = MetricWelder(context)
 
-    timestamp = datetime.now(utc).replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    timestamp = datetime.now(utc).replace(
+        day=1, hour=0, minute=0, second=0, microsecond=0
+    ) - timedelta(hours=9, minutes=1)
 
     while True:
 
