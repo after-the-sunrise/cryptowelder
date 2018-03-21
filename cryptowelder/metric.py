@@ -142,16 +142,23 @@ class MetricWelder:
             for dto in values if values is not None else []:
 
                 ticker = dto.ticker
-                ask = ticker.tk_ask
-                bid = ticker.tk_bid
-                ltp = ticker.tk_ltp
+                ask = ticker.tk_ask if ticker.tk_ask != self._ZERO else None
+                bid = ticker.tk_bid if ticker.tk_bid != self._ZERO else None
+                ltp = ticker.tk_ltp if ticker.tk_ltp != self._ZERO else None
 
-                if ask is not None and ask != self._ZERO and bid is not None and bid != self._ZERO:
+                price = None
+
+                if ask is not None and bid is not None:
                     price = (ask + bid) * self._HALF
-                elif ltp is not None and ltp != self._ZERO:
+
+                if price is None:
+                    price = ask
+
+                if price is None:
+                    price = bid
+
+                if price is None:
                     price = ltp
-                else:
-                    price = None
 
                 prices[ticker.tk_site][ticker.tk_code] = price
 
