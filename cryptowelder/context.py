@@ -25,6 +25,7 @@ class CryptowelderContext:
     _SECTION = 'context'
     _FORMAT_ISO = compile('^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]+)?Z?$')
     _FORMAT_UNX = compile('^[0-9]+(\\.[0-9]+)?$')
+    _ZERO = Decimal('0')
 
     def __init__(self, *, config=None, read_only=True, debug=True, echo=False):
         # Read-only for testing
@@ -596,7 +597,12 @@ class CryptowelderContext:
                 Ticker.tk_code,
                 functions.max(Ticker.tk_time).label('tk_time')
             ).filter(
-                Ticker.tk_time <= time
+                Ticker.tk_time <= time,
+                or_(
+                    and_(Ticker.tk_ask.isnot(None), Ticker.tk_ask != self._ZERO),
+                    and_(Ticker.tk_bid.isnot(None), Ticker.tk_bid != self._ZERO),
+                    and_(Ticker.tk_ltp.isnot(None), Ticker.tk_ltp != self._ZERO),
+                )
             ).group_by(
                 Ticker.tk_site,
                 Ticker.tk_code,
