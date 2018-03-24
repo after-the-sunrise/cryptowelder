@@ -175,9 +175,15 @@ class CryptowelderContext:
         return result
 
     def requests_get(self, url, params=None, **kwargs):
+
+        kwargs.setdefault('timeout', int(self.get_property(self._SECTION, "request_timeout", 60)))
+
         return self._request(lambda: get(url, params=params, **kwargs), label=url)
 
     def requests_post(self, url, data=None, json=None, **kwargs):
+
+        kwargs.setdefault('timeout', int(self.get_property(self._SECTION, "request_timeout", 60)))
+
         return self._request(lambda: post(url, data=data, json=json, **kwargs), label=url)
 
     def _truncate_datetime(self, source):
