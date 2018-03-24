@@ -270,3 +270,25 @@ CREATE INDEX i_metric_1
     extract(EPOCH FROM mc_time),
     mc_name
   );
+
+CREATE INDEX i_metric_2
+  ON t_metric
+  (
+    mc_time
+  );
+
+
+--
+-- Mock for Grafana's built-in function
+--
+CREATE OR REPLACE FUNCTION "$__timeFilter"(TIMESTAMP)
+  RETURNS BOOLEAN
+AS $$
+SELECT extract(EPOCH FROM $1) >= extract(EPOCH FROM t.now - INTERVAL '1 day')
+       AND
+       extract(EPOCH FROM $1) < extract(EPOCH FROM t.now)
+FROM (SELECT now() AS now) AS t
+$$
+RETURNS NULL ON NULL
+INPUT
+LANGUAGE SQL;
