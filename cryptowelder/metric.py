@@ -76,9 +76,9 @@ class MetricWelder:
     def process_metric(self):
         self.process_metrics(self.__context.get_now())
 
-    def process_metrics(self, base_time):
+    def process_metrics(self, base_time, *, default_count=3):
 
-        count = int(self.__context.get_property(self._ID, 'timestamp', 3))
+        count = int(self.__context.get_property(self._ID, 'timestamp', default_count))
 
         timestamps = [base_time.replace(second=0, microsecond=0) - timedelta(minutes=i) for i in range(0, count)]
 
@@ -413,7 +413,7 @@ def main_historical():
         if timestamp >= datetime.now().astimezone(utc):
             break
 
-        target.process_metrics(timestamp)
+        target.process_metrics(timestamp, default_count=1)
 
         timestamp = timestamp + timedelta(minutes=60)
 
