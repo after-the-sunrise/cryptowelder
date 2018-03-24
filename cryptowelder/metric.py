@@ -165,7 +165,14 @@ class MetricWelder:
 
             metrics = []
 
+            threshold_minutes = self.__context.get_property(self._ID, 'ticker_threshold', 3)
+
+            threshold_cutoff = timestamp - timedelta(minutes=int(threshold_minutes))
+
             for dto in values if values is not None else []:
+
+                if dto.ticker.tk_time.replace(tzinfo=threshold_cutoff.tzinfo) < threshold_cutoff:
+                    continue
 
                 price = prices[dto.ticker.tk_site][dto.ticker.tk_code]
 
