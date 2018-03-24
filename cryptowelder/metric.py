@@ -22,6 +22,7 @@ class MetricWelder:
         self.__threads = [
             Thread(target=self._wrap, args=(self.process_timestamp, 30)),
             Thread(target=self._wrap, args=(self.process_metric, 30)),
+            Thread(target=self._wrap, args=(self.purge_metric, 3600)),
         ]
 
     def run(self):
@@ -356,6 +357,40 @@ class MetricWelder:
 
             self.__logger.warn('Transaction (volume) : %s : %s', type(e), e.args)
 
+    def purge_metric(self, *, intervals=(
+
+            # [0] Older than 5+ years, delete all.
+            (1984, tuple()),
+
+            # [1] Older than 1+ month, hourly interval.
+            (42, tuple([0])),
+
+            # [2] Older than 1 week, 30 minutes interval.
+            (7, tuple(i * 30 for i in range(0, 2))),
+
+            # [3] Older than 2 days, 15 minutes interval.
+            (2, tuple(i * 15 for i in range(0, 4))),
+
+            # [4] Older than 1 day, 5 minutes interval.
+            (1, tuple(i * 5 for i in range(0, 12))),
+
+    )):
+
+        now = self.__context.get_now()
+
+        for idx, entry in enumerate(intervals):
+
+            days = self.__context.get_property(self._ID, 'purge_%s' % idx, entry[0])
+
+            if days is None:
+                continue
+
+            cutoff = now - timedelta(days=max(int(days), 1))
+
+            count = self.__context.delete_metrics(cutoff, exclude_minutes=entry[1])
+
+            self.__logger.debug('Purged [%s] cutoff=%s count=%s', idx, cutoff, count)
+
 
 def main():
     context = CryptowelderContext(config='~/.cryptowelder', debug=True)
@@ -371,18 +406,16 @@ def main_historical():
 
     target = MetricWelder(context)
 
-    timestamp = datetime.now(utc).replace(
-        day=1, hour=0, minute=0, second=0, microsecond=0
-    ) - timedelta(hours=9, minutes=1)
+    timestamp = context.get_now().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
 
     while True:
-
-        timestamp = timestamp + timedelta(minutes=3)
 
         if timestamp >= datetime.now().astimezone(utc):
             break
 
         target.process_metrics(timestamp)
+
+        timestamp = timestamp + timedelta(minutes=60)
 
 
 if __name__ == '__main__':

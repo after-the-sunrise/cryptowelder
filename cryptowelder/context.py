@@ -13,7 +13,7 @@ from time import sleep
 import prometheus_client
 from pytz import utc
 from requests import get, post
-from sqlalchemy import create_engine, Column, String, DateTime, Numeric, Enum as Type, and_, or_, func
+from sqlalchemy import create_engine, Column, String, DateTime, Numeric, Integer, Enum as Type, and_, or_, func, cast
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, scoped_session, aliased
 from sqlalchemy.sql import functions
@@ -585,6 +585,41 @@ class CryptowelderContext:
             session.close()
 
         return merged
+
+    def delete_metrics(self, cutoff_time, *, exclude_minutes=None):
+
+        session = self.__session()
+
+        try:
+
+            filters = [Metric.mc_time < cutoff_time]
+
+            if exclude_minutes is not None and len(exclude_minutes) > 0:
+                filters.append(
+                    cast(
+                        func.extract('minute', Metric.mc_time),
+                        Integer
+                    ).notin_(exclude_minutes)
+                )
+
+            count = session.query(Metric).filter(*filters).delete(synchronize_session='fetch')
+
+            if count > 0:
+                session.commit()
+
+        except BaseException as e:
+
+            self.__logger.error('Delete - %s : %s', type(e), e.args)
+
+            session.rollback()
+
+            raise e
+
+        finally:
+
+            session.close()
+
+        return count
 
     def fetch_tickers(self, time, *, include_expired=False):
 
