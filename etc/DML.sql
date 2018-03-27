@@ -5,6 +5,7 @@ TRUNCATE TABLE t_product;
 
 INSERT INTO t_product (pr_site, pr_code, pr_inst, pr_fund, pr_disp, pr_expr)
 VALUES
+  ('binance', 'BTCUSDT', 'BTC', 'USD', 'BNC BTC', NULL),
   ('bitbank', 'btc_jpy', 'BTC', 'JPY', 'BBK BTC', NULL),
   ('bitfinex', 'btcusd', 'BTC', 'USD', 'BFN BTC', NULL),
   ('bitflyer', 'BTC_JPY', 'BTC', 'JPY', 'BFL BTC', NULL),
@@ -26,9 +27,12 @@ TRUNCATE TABLE t_evaluation;
 
 INSERT INTO t_evaluation (ev_site, ev_unit, ev_ticker_site, ev_ticker_code, ev_convert_site, ev_convert_code)
 VALUES
+  ('binance', 'USD', 'oanda', 'USD_JPY', NULL, NULL),
+  ('binance', 'BTC', 'bitflyer', 'BTC_JPY', NULL, NULL),
   ('bitbank', 'JPY', NULL, NULL, NULL, NULL),
   ('bitbank', 'BTC', 'bitbank', 'btc_jpy', NULL, NULL),
   ('bitfinex', 'USD', 'oanda', 'USD_JPY', NULL, NULL),
+  ('bitfinex', 'BTC', 'bitflyer', 'BTC_JPY', NULL, NULL),
   ('bitflyer', 'JPY', NULL, NULL, NULL, NULL),
   ('bitflyer', 'BTC', 'bitflyer', 'BTC_JPY', NULL, NULL),
   ('bitflyer', 'BFX', 'bitflyer', 'FX_BTC_JPY', NULL, NULL),
@@ -43,6 +47,7 @@ VALUES
   ('oanda', 'JPY', NULL, NULL, NULL, NULL),
   ('oanda', 'USD', 'oanda', 'USD_JPY', NULL, NULL),
   ('poloniex', 'USD', 'oanda', 'USD_JPY', NULL, NULL),
+  ('poloniex', 'BTC', 'bitflyer', 'BTC_JPY', NULL, NULL),
   ('quoinex', 'JPY', NULL, NULL, NULL, NULL),
   ('quoinex', 'BTC', 'quoinex', 'BTCJPY', NULL, NULL),
   ('zaif', 'JPY', NULL, NULL, NULL, NULL),
@@ -55,9 +60,12 @@ TRUNCATE TABLE t_account;
 
 INSERT INTO t_account (ac_site, ac_acct, ac_unit, ac_disp)
 VALUES
+  ('binance', 'CASH', 'USD', 'BNC USD'),
+  ('binance', 'CASH', 'BTC', 'BNC BTC'),
   ('bitbank', 'CASH', 'JPY', 'BBK JPY'),
   ('bitbank', 'CASH', 'BTC', 'BBK BTC'),
   ('bitfinex', 'CASH', 'USD', 'BFN USD'),
+  ('bitfinex', 'CASH', 'BTC', 'BFN BTC'),
   ('bitflyer', 'CASH', 'JPY', 'BFL JPY'),
   ('bitflyer', 'CASH', 'BTC', 'BFL BTC'),
   ('bitflyer', 'MARGIN', 'JPY', 'BFL JPYC'),
@@ -71,6 +79,7 @@ VALUES
   ('coincheck', 'CASH', 'JPY', 'CCK JPY'),
   ('coincheck', 'CASH', 'BTC', 'CCK BTC'),
   ('poloniex', 'CASH', 'USD', 'PLX USD'),
+  ('poloniex', 'CASH', 'BTC', 'PLX BTC'),
   ('oanda', 'MARGIN', 'JPY', 'OND JPY'),
   ('oanda', 'MARGIN', 'USD', 'OND USD'),
   ('quoinex', 'CASH', 'JPY', 'QNX JPY'),
