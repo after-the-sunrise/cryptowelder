@@ -1,3 +1,4 @@
+from cryptowelder import binance
 from cryptowelder import bitbank
 from cryptowelder import bitfinex
 from cryptowelder import bitflyer
@@ -13,6 +14,7 @@ from cryptowelder import zaif
 
 Context = context.CryptowelderContext
 
+BinanceWelder = binance.BinanceWelder
 BitbankWelder = bitbank.BitbankWelder
 BitfinexWelder = bitfinex.BitfinexWelder
 BitflyerWelder = bitflyer.BitflyerWelder
