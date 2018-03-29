@@ -29,7 +29,7 @@ Time-series data displayed graphs/charts, and are continuously updated in real-t
 Displayed time-windows are configurable on the fly, such as today, last 24h, this week, last N days, and arbitrary time-points from T1 to T2.
 Configure custom alerts and notifications. (cf: "Email and/or Slack me if indicator X is Y")
 
-### Web UI
+### Customizable Web UI
 Monitor trading activities from desktops and/or mobile with a standard web browser. 
 Drag & drop graphs and components to create custom dashboards.
 
@@ -37,7 +37,7 @@ Drag & drop graphs and components to create custom dashboards.
 Convert multiple currencies in a single home-currency unit (cf: 1.2 CoinA + 2.3 CoinB + 3.4 CoinC -> 2345.6 JPY).
 Which currency to evaluate to, and how to apply the conversions are dynamically configurable. 
 
-### Trade Statistics
+### Trading Statistics
 Display trading activities such as daily/monthly trading p/l, N-days trading volume per accounts/products.
 Track trading activity statistics such as comparing last N-days trading volume as of today versus that of yesterday.
 
@@ -61,7 +61,7 @@ The application consists of the following components:
 
 ### Installation Steps
 1. Install and configure PostgreSQL instance. 
-    1. Create database `crytowelder`.
+    1. Create database `cryptowelder`.
     2. Execute the DDL and DML scripts.
     3. Create database user `grafana` and grant read-only access.
 2. Configure and build the Python scripts.
