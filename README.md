@@ -59,14 +59,14 @@ The application consists of the following components:
 
 ### Steps
 1. Install and configure PostgreSQL instance. 
- 1. Create database `crytowelder`.
- 2. Execute the DDL and DML scripts.
- 3. Create database user `grafana` and grant read-only access.
+  1. Create database `crytowelder`.
+  2. Execute the DDL and DML scripts.
+  3. Create database user `grafana` and grant read-only access.
 2. Configure and build the Python scripts.
- 1. Install pip requirements.
- 2. Prepare local configuration file with access tokens and scraping policies.
- 3. Launch the script to start collecting and storing data into the database.
+  1. Install pip requirements.
+  2. Prepare local configuration file with access tokens and scraping policies.
+  3. Launch the script to start collecting and storing data into the database.
 3. Install and configure Grafana instance.
- 1. Configure users and security policies.
- 2. Import the dashboard template included.
- 3. Access Grafana's web ui with a web browser.
+  1. Configure users and security policies.
+  2. Import the dashboard template included.
+  3. Access Grafana's web ui with a web browser.
