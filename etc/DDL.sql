@@ -67,22 +67,6 @@ PRIMARY KEY
   );
 
 --
--- Timestamp
---
-CREATE TABLE IF NOT EXISTS t_timestamp (
-  ts_time TIMESTAMP NOT NULL
-);
-
-DROP INDEX IF EXISTS i_timestamp_0;
-
-ALTER TABLE t_timestamp
-  ADD CONSTRAINT i_timestamp_0
-PRIMARY KEY
-  (
-    ts_time
-  );
-
---
 -- Ticker
 --
 CREATE TABLE IF NOT EXISTS t_ticker

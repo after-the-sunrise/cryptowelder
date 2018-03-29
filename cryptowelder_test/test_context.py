@@ -12,7 +12,7 @@ from unittest.mock import MagicMock
 from pytz import utc
 from requests import get
 
-from cryptowelder.context import CryptowelderContext, Timestamp, Metric, \
+from cryptowelder.context import CryptowelderContext, Metric, \
     Product, Evaluation, Account, Transaction, Ticker, Balance, Position, AccountType, UnitType, TransactionType
 
 
@@ -549,40 +549,6 @@ class TestCryptowelderContext(TestCase):
         results = self.target.save_transactions([t1])
         self.assertEqual(len(results), 0)
 
-    def test_save_timestamps(self):
-        self.target._create_all()
-
-        dt = datetime.now()
-
-        t1 = Timestamp()
-        t1.ts_time = dt + timedelta(minutes=1)
-
-        t2 = Timestamp()
-        t2.ts_time = dt + timedelta(minutes=2)
-
-        t3 = Timestamp()
-        t3.ts_time = None
-
-        # All new records
-        results = self.target.save_timestamps([t1, None, t2])
-        self.assertEqual(len(results), 2)
-        self.assertTrue(t1 in results)
-        self.assertTrue(t2 in results)
-
-        # Existing records
-        results = self.target.save_timestamps([t2])
-        self.assertEqual(len(results), 1)
-        self.assertTrue(t2 in results)
-
-        # PK Failure
-        with self.assertRaises(BaseException):
-            self.target.save_timestamps([t3])
-
-        # Read-only
-        self.target._is_read_only = lambda: True
-        results = self.target.save_timestamps([t1])
-        self.assertEqual(len(results), 0)
-
     def test_save_metrics(self):
         self.target._create_all()
 
@@ -630,11 +596,62 @@ class TestCryptowelderContext(TestCase):
         results = self.target.save_metrics([m1])
         self.assertEqual(len(results), 0)
 
+    def test_delete_metrics(self):
+        self.target._create_all()
+
+        base = datetime.now(tz=utc).replace(minute=0, second=0, microsecond=0)
+
+        def load_records():
+            m1 = Metric()
+            m1.mc_type = 'test'
+            m1.mc_time = base.replace(minute=1)
+            m1.mc_name = 'foo'
+
+            m2 = Metric()
+            m2.mc_type = 'test'
+            m2.mc_time = base.replace(minute=2)
+            m2.mc_name = 'bar'
+
+            m3 = Metric()
+            m3.mc_type = 'test'
+            m3.mc_time = base.replace(minute=3)
+            m3.mc_name = 'hoge'
+
+            self.target.save_metrics((m1, m2, m3))
+
+        load_records()
+
+        count = self.target.delete_metrics(base)
+        self.assertEqual(count, 0)
+
+        count = self.target.delete_metrics(base.replace(minute=1))
+        self.assertEqual(count, 0)
+
+        count = self.target.delete_metrics(base.replace(minute=3))
+        self.assertEqual(count, 2)
+
+        count = self.target.delete_metrics(base.replace(minute=4))
+        self.assertEqual(count, 1)
+
+        load_records()
+
+        count = self.target.delete_metrics(base.replace(minute=4), exclude_minutes=[1, 2, 3])
+        self.assertEqual(count, 0)
+
+        count = self.target.delete_metrics(base.replace(minute=4), exclude_minutes=[1])
+        self.assertEqual(count, 2)
+
+        try:
+            self.target.delete_metrics(None)
+            self.fail()
+        except BaseException as e:
+            self.assertIsNotNone(e)
+
     def test_fetch_tickers(self):
         self.target._create_all()
 
         # TODO : Test data
-        self.target.fetch_balances(datetime.now())
+        self.target.fetch_tickers(datetime.now())
 
     def test_fetch_balances(self):
         self.target._create_all()
@@ -761,13 +778,6 @@ class TestCryptowelderContext(TestCase):
                          "'acct': 'CASH', 'oid': 'o_id', 'eid': 'e_id', "
                          "'time': '2009-02-13 23:31:30.123456 UTC', "
                          "'instrument': '1.2', 'funding': '2.3'}", str(value))
-
-    def test_Timestamp(self):
-        value = Timestamp()
-        self.assertEqual("{'table': 't_timestamp', 'time': 'None'}", str(value))
-
-        value.ts_time = datetime.fromtimestamp(1234567890.123456, tz=utc)
-        self.assertEqual("{'table': 't_timestamp', 'time': '2009-02-13 23:31:30.123456 UTC'}", str(value))
 
     def test_Metric(self):
         value = Metric()

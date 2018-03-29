@@ -507,47 +507,6 @@ class CryptowelderContext:
 
         return candidates.keys()
 
-    def save_timestamps(self, timestamps):
-
-        merged = []
-
-        session = self.__session()
-
-        try:
-
-            for t in timestamps if timestamps is not None else []:
-
-                if self._is_read_only():
-                    self.__logger.debug("Skipping : %s", t)
-                    continue
-
-                if t is None:
-                    continue
-
-                value = Timestamp()
-                value.ts_time = t.ts_time.astimezone(utc)
-
-                session.merge(value)
-
-                merged.append(t)
-
-            if len(merged) > 0:
-                session.commit()
-
-        except BaseException as e:
-
-            self.__logger.error('Timestamp - %s : %s', type(e), e.args)
-
-            session.rollback()
-
-            raise e
-
-        finally:
-
-            session.close()
-
-        return merged
-
     def save_metrics(self, metrics):
 
         merged = []
@@ -1005,17 +964,6 @@ class Transaction(CryptowelderContext.ENTITY_BASE, BaseEntity):
             'time': self.tx_time,
             'instrument': self.tx_inst,
             'funding': self.tx_fund,
-        })
-
-
-class Timestamp(CryptowelderContext.ENTITY_BASE, BaseEntity):
-    __tablename__ = 't_timestamp'
-    ts_time = Column(DateTime, primary_key=True)
-
-    def __str__(self):
-        return BaseEntity._to_string({
-            'table': self.__tablename__,
-            'time': self.ts_time,
         })
 
 

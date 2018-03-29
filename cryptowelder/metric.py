@@ -7,7 +7,7 @@ from time import sleep
 
 from pytz import utc
 
-from cryptowelder.context import CryptowelderContext, Timestamp, Metric
+from cryptowelder.context import CryptowelderContext, Metric
 
 
 class MetricWelder:
@@ -20,7 +20,6 @@ class MetricWelder:
         self.__context = context
         self.__logger = context.get_logger(self)
         self.__threads = [
-            Thread(target=self._wrap, args=(self.process_timestamp, 30)),
             Thread(target=self._wrap, args=(self.process_metric, 30)),
             Thread(target=self._wrap, args=(self.purge_metric, 3600)),
         ]
@@ -52,26 +51,6 @@ class MetricWelder:
                 self.__logger.warn('%s - %s : %s', func.__name__, type(e), e.args)
 
             sleep(interval)
-
-    def process_timestamp(self):
-
-        count = int(self.__context.get_property(self._ID, 'timestamp', 3))
-
-        values = [
-            self.__context.get_now().replace(second=0, microsecond=0)
-        ]
-
-        while len(values) < count:
-            values.append(values[0] - timedelta(minutes=len(values)))
-
-        timestamps = []
-
-        for v in values:
-            t = Timestamp()
-            t.ts_time = v
-            timestamps.append(t)
-
-        self.__context.save_timestamps(timestamps)
 
     def process_metric(self):
         self.process_metrics(self.__context.get_now())
