@@ -57,7 +57,7 @@
       "fill": 1,
       "gridPos": {
         "h": 16,
-        "w": 14,
+        "w": 12,
         "x": 0,
         "y": 0
       },
@@ -103,7 +103,7 @@
       ],
       "thresholds": [],
       "timeFrom": null,
-      "timeShift": null,
+      "timeShift": "30s",
       "title": "",
       "tooltip": {
         "shared": true,
@@ -147,8 +147,8 @@
       "fill": 0,
       "gridPos": {
         "h": 16,
-        "w": 10,
-        "x": 14,
+        "w": 12,
+        "x": 12,
         "y": 0
       },
       "id": 4,
@@ -201,7 +201,7 @@
       ],
       "thresholds": [],
       "timeFrom": null,
-      "timeShift": null,
+      "timeShift": "30s",
       "title": "",
       "tooltip": {
         "shared": true,
@@ -244,10 +244,204 @@
       "datasource": "${DS_CRYPTOWELDER}",
       "fill": 0,
       "gridPos": {
+        "h": 14,
+        "w": 12,
+        "x": 0,
+        "y": 16
+      },
+      "id": 6,
+      "legend": {
+        "alignAsTable": true,
+        "avg": false,
+        "current": true,
+        "max": false,
+        "min": false,
+        "rightSide": true,
+        "show": true,
+        "total": false,
+        "values": true
+      },
+      "lines": true,
+      "linewidth": 1,
+      "links": [],
+      "nullPointMode": "null",
+      "percentage": false,
+      "pointradius": 5,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [
+        {
+          "alias": "BFL BTC",
+          "color": "rgb(255, 255, 255)"
+        },
+        {
+          "alias": "OND USD",
+          "color": "#052b51",
+          "fill": 3,
+          "legend": false,
+          "yaxis": 2,
+          "zindex": -3
+        }
+      ],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "alias": "",
+          "format": "time_series",
+          "rawSql": "WITH w_metric AS (\n  SELECT * FROM t_metric WHERE $__timeFilter(mc_time) AND mc_type = 'ticker' AND mc_name NOT IN (\n    'BFL BCH', 'BFL ETH'\n  )\n)\nSELECT \n  mc_time AS time, mc_name AS metric, mc_amnt\nFROM\n  w_metric\nORDER BY\n  metric, time",
+          "refId": "A"
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "transparent": true,
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "format": "locale",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "decimals": 2,
+          "format": "locale",
+          "label": "",
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ]
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": "${DS_CRYPTOWELDER}",
+      "decimals": null,
+      "fill": 0,
+      "gridPos": {
+        "h": 14,
+        "w": 12,
+        "x": 12,
+        "y": 16
+      },
+      "id": 8,
+      "legend": {
+        "alignAsTable": true,
+        "avg": false,
+        "current": true,
+        "max": false,
+        "min": false,
+        "rightSide": true,
+        "show": true,
+        "total": false,
+        "values": true
+      },
+      "lines": true,
+      "linewidth": 1,
+      "links": [],
+      "nullPointMode": "null",
+      "percentage": false,
+      "pointradius": 5,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [
+        {
+          "alias": "BFL BTC",
+          "color": "rgb(255, 255, 255)",
+          "legend": false
+        },
+        {
+          "alias": "BFL SPR",
+          "color": "#890f02",
+          "dashes": true,
+          "fill": 2,
+          "yaxis": 2
+        }
+      ],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "alias": "",
+          "format": "time_series",
+          "rawSql": "WITH w_metric AS (\n  SELECT * FROM t_metric WHERE $__timeFilter(mc_time) AND mc_type = 'ticker' AND mc_name NOT IN (\n    'BFL BCH', 'BFL ETH', 'OND USD'\n  )\n)\nSELECT \n  m1.mc_time AS time, m1.mc_name AS metric, m1.mc_amnt - m2.mc_amnt\nFROM\n  w_metric m1\nJOIN\n  w_metric m2 ON m2.mc_type = m1.mc_type AND m2.mc_time = m1.mc_time AND m2.mc_name = 'BFL BTC'\nUNION\nSELECT \n  m1.mc_time AS time, 'BFL SPR' AS metric, m1.mc_amnt / m2.mc_amnt - 1\nFROM\n  w_metric m1\nJOIN\n  w_metric m2 ON m2.mc_type = m1.mc_type AND m2.mc_time = m1.mc_time AND m2.mc_name = 'BFL BTC'\nWHERE\n m1.mc_name = 'BFL BFX'\nORDER BY \n  metric, time",
+          "refId": "A"
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "transparent": true,
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "decimals": null,
+          "format": "locale",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "decimals": 2,
+          "format": "percentunit",
+          "label": null,
+          "logBase": 1,
+          "max": "0.1",
+          "min": "-0.1",
+          "show": true
+        }
+      ]
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": "${DS_CRYPTOWELDER}",
+      "fill": 0,
+      "gridPos": {
         "h": 10,
         "w": 6,
         "x": 0,
-        "y": 16
+        "y": 30
       },
       "id": 10,
       "legend": {
@@ -334,7 +528,7 @@
         "h": 10,
         "w": 6,
         "x": 6,
-        "y": 16
+        "y": 30
       },
       "id": 12,
       "legend": {
@@ -421,7 +615,7 @@
         "h": 10,
         "w": 6,
         "x": 12,
-        "y": 16
+        "y": 30
       },
       "id": 16,
       "legend": {
@@ -510,7 +704,7 @@
         "h": 10,
         "w": 6,
         "x": 18,
-        "y": 16
+        "y": 30
       },
       "id": 14,
       "legend": {
@@ -587,199 +781,6 @@
           "show": true
         }
       ]
-    },
-    {
-      "aliasColors": {},
-      "bars": false,
-      "dashLength": 10,
-      "dashes": false,
-      "datasource": "${DS_CRYPTOWELDER}",
-      "fill": 0,
-      "gridPos": {
-        "h": 14,
-        "w": 12,
-        "x": 0,
-        "y": 26
-      },
-      "id": 6,
-      "legend": {
-        "alignAsTable": true,
-        "avg": false,
-        "current": true,
-        "max": false,
-        "min": false,
-        "rightSide": true,
-        "show": true,
-        "total": false,
-        "values": true
-      },
-      "lines": true,
-      "linewidth": 1,
-      "links": [],
-      "nullPointMode": "null",
-      "percentage": false,
-      "pointradius": 5,
-      "points": false,
-      "renderer": "flot",
-      "seriesOverrides": [
-        {
-          "alias": "BFL BTC",
-          "color": "rgb(255, 255, 255)"
-        },
-        {
-          "alias": "OND USD",
-          "color": "#052b51",
-          "fill": 2,
-          "legend": false,
-          "yaxis": 2,
-          "zindex": -3
-        }
-      ],
-      "spaceLength": 10,
-      "stack": false,
-      "steppedLine": false,
-      "targets": [
-        {
-          "alias": "",
-          "format": "time_series",
-          "rawSql": "WITH w_metric AS (\n  SELECT * FROM t_metric WHERE $__timeFilter(mc_time) AND mc_type = 'ticker' AND mc_name NOT IN (\n    'BFL BCH', 'BFL ETH'\n  )\n)\nSELECT \n  mc_time AS time, mc_name AS metric, mc_amnt\nFROM\n  w_metric\nORDER BY\n  metric, time",
-          "refId": "A"
-        }
-      ],
-      "thresholds": [],
-      "timeFrom": null,
-      "timeShift": null,
-      "title": "",
-      "tooltip": {
-        "shared": true,
-        "sort": 0,
-        "value_type": "individual"
-      },
-      "transparent": true,
-      "type": "graph",
-      "xaxis": {
-        "buckets": null,
-        "mode": "time",
-        "name": null,
-        "show": true,
-        "values": []
-      },
-      "yaxes": [
-        {
-          "format": "locale",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        },
-        {
-          "decimals": 2,
-          "format": "locale",
-          "label": "",
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        }
-      ]
-    },
-    {
-      "aliasColors": {},
-      "bars": false,
-      "dashLength": 10,
-      "dashes": false,
-      "datasource": "${DS_CRYPTOWELDER}",
-      "decimals": null,
-      "fill": 0,
-      "gridPos": {
-        "h": 14,
-        "w": 12,
-        "x": 12,
-        "y": 26
-      },
-      "id": 8,
-      "legend": {
-        "alignAsTable": true,
-        "avg": false,
-        "current": true,
-        "max": false,
-        "min": false,
-        "rightSide": true,
-        "show": true,
-        "total": false,
-        "values": true
-      },
-      "lines": true,
-      "linewidth": 1,
-      "links": [],
-      "nullPointMode": "null",
-      "percentage": false,
-      "pointradius": 5,
-      "points": false,
-      "renderer": "flot",
-      "seriesOverrides": [
-        {
-          "alias": "BFL BTC",
-          "color": "rgb(255, 255, 255)",
-          "legend": false
-        },
-        {
-          "alias": "BFL SPR",
-          "color": "#58140c",
-          "dashes": true,
-          "yaxis": 2
-        }
-      ],
-      "spaceLength": 10,
-      "stack": false,
-      "steppedLine": false,
-      "targets": [
-        {
-          "alias": "",
-          "format": "time_series",
-          "rawSql": "WITH w_metric AS (\n  SELECT * FROM t_metric WHERE $__timeFilter(mc_time) AND mc_type = 'ticker' AND mc_name NOT IN (\n    'BFL BCH', 'BFL ETH', 'OND USD'\n  )\n)\nSELECT \n  m1.mc_time AS time, m1.mc_name AS metric, m1.mc_amnt - m2.mc_amnt\nFROM\n  w_metric m1\nJOIN\n  w_metric m2 ON m2.mc_type = m1.mc_type AND m2.mc_time = m1.mc_time AND m2.mc_name = 'BFL BTC'\nUNION\nSELECT \n  m1.mc_time AS time, 'BFL SPR' AS metric, m1.mc_amnt / m2.mc_amnt - 1\nFROM\n  w_metric m1\nJOIN\n  w_metric m2 ON m2.mc_type = m1.mc_type AND m2.mc_time = m1.mc_time AND m2.mc_name = 'BFL BTC'\nWHERE\n m1.mc_name = 'BFL BFX'\nORDER BY \n  metric, time",
-          "refId": "A"
-        }
-      ],
-      "thresholds": [],
-      "timeFrom": null,
-      "timeShift": null,
-      "title": "",
-      "tooltip": {
-        "shared": true,
-        "sort": 0,
-        "value_type": "individual"
-      },
-      "transparent": true,
-      "type": "graph",
-      "xaxis": {
-        "buckets": null,
-        "mode": "time",
-        "name": null,
-        "show": true,
-        "values": []
-      },
-      "yaxes": [
-        {
-          "decimals": null,
-          "format": "locale",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        },
-        {
-          "decimals": 2,
-          "format": "percentunit",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        }
-      ]
     }
   ],
   "refresh": "5m",
@@ -790,7 +791,7 @@
     "list": []
   },
   "time": {
-    "from": "now-2d",
+    "from": "now-24h",
     "to": "now"
   },
   "timepicker": {
@@ -821,5 +822,5 @@
   "timezone": "",
   "title": "Cryptowelder",
   "uid": "uSjs0pgmz",
-  "version": 44
+  "version": 52
 }
