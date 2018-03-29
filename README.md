@@ -8,14 +8,17 @@
 
 ## Overview
 
-**cryptowelder** is a cryptocurrency trade monitoring application to visualize the trading activities, positions, profits and losses in time series graph.
+**cryptowelder** is a cryptocurrency trade monitoring application to visualize the time series of trading activities, positions, volumes, profits and losses.
 
-1. Extract market data and account information from public APIs and private APIs.
+1. Extract public market data and private account information from exchange APIs.
 2. Transform the extracted data set into its generic data model.
 3. Store the transformed data into its time-series database.
 4. Visualize the time-series data with various graphs and charts. 
 
 ![Grafana Dashboard Screenshot](./docs/img/dashboard.png)
+
+
+## Feature Highlights
 
 ### Multi-Currency, Multi-Exchange
 Collect and store data from multiple exchanges for multiple products and multiple currencies. 
@@ -39,13 +42,6 @@ Display trading activities such as daily/monthly trading p/l, N-days trading vol
 Track trading activity statistics such as comparing last N-days trading volume as of today versus that of yesterday.
 
 
-## Mechanics
-The application consists of the following components:
-* Set of [Python](https://www.python.org/) scripts for scraping data via public/private APIs.
-* RDBMS ([PostgreSQL](https://www.postgresql.org/)) for storing the time-series data.
-* [Grafana](https://grafana.com/) for visualization and alerting of the time-series data.
-
-
 ## Getting Started
 
 ### Prerequisites
@@ -57,7 +53,13 @@ The application consists of the following components:
 * Basic knowledge of Linux for configuration and installation. 
 * Basic knowledge of Python and SQL for customization. 
 
-### Steps
+### Mechanics
+The application consists of the following components:
+* Set of [Python](https://www.python.org/) scripts for scraping data via public/private APIs.
+* RDBMS ([PostgreSQL](https://www.postgresql.org/)) for storing the time-series data.
+* [Grafana](https://grafana.com/) for visualization and alerting of the time-series data.
+
+### Installation Steps
 1. Install and configure PostgreSQL instance. 
     1. Create database `crytowelder`.
     2. Execute the DDL and DML scripts.
