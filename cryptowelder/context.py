@@ -6,11 +6,12 @@ from enum import auto, Enum
 from json import loads
 from logging import Formatter, StreamHandler, DEBUG, INFO, getLogger
 from logging.handlers import TimedRotatingFileHandler, BufferingHandler
+from math import nan
 from os import path
 from re import compile
 from time import sleep
 
-import prometheus_client
+from prometheus_client import Gauge, start_http_server
 from pytz import utc
 from requests import get, post
 from sqlalchemy import create_engine, Column, String, DateTime, Numeric, Integer, Enum as Type, and_, or_, func, cast
@@ -124,7 +125,7 @@ class CryptowelderContext:
 
         return datetime.fromtimestamp(float(value), tz=utc)
 
-    def launch_prometheus(self, *, method=prometheus_client.start_http_server):
+    def launch_prometheus(self, *, method=start_http_server):
 
         host = self.get_property(self._SECTION, 'prometheus_host', 'localhost')
         port = self.get_property(self._SECTION, 'prometheus_port', '20000')
@@ -507,7 +508,9 @@ class CryptowelderContext:
 
         return candidates.keys()
 
-    def save_metrics(self, metrics):
+    def save_metrics(self, metrics, *,
+                     gauge=Gauge('metric', 'Saved metric values', ('type', 'name'))
+                     ):
 
         merged = []
 
@@ -536,6 +539,10 @@ class CryptowelderContext:
 
             if len(merged) > 0:
                 session.commit()
+
+            for m in merged:
+                g = m.mc_amnt if m.mc_amnt is not None else nan
+                gauge.labels(m.mc_type, m.mc_name).set(g)
 
         except BaseException as e:
 
