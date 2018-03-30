@@ -21,7 +21,7 @@ class BitfinexWelder:
 
         self.__thread.join()
 
-    def _loop(self):
+    def _loop(self, *, default_interval=15):
 
         self.__logger.info('Processing : %s', self.__endpoint)
 
@@ -37,7 +37,7 @@ class BitfinexWelder:
             for t in threads:
                 t.join()
 
-            sleep(float(self.__context.get_property(self._ID, 'interval', 15)))
+            sleep(float(self.__context.get_property(self._ID, 'interval', default_interval)))
 
         self.__logger.info('Terminated.')
 
