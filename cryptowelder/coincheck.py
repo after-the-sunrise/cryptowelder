@@ -146,7 +146,7 @@ class CoincheckWelder:
 
                     values.append(value)
 
-                self.__logger.debug('Transactions : fetched=[%s] sequence=[%s]', len(values), page[pk])
+                self.__logger.debug('Transactions : fetched=[%s] sequence=[%s]', len(values), page.get(pk))
 
                 results = self.__context.save_transactions(values)
 
