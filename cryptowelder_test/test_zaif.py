@@ -30,9 +30,11 @@ class TestPoloniexWelder(TestCase):
         self.context.is_closed = MagicMock(side_effect=(False, False, True))
         self.target._process_ticker = MagicMock()
         self.target._process_balance = MagicMock()
+        self.target._process_trades = MagicMock()
         self.target._loop(default_interval=0.1)
         self.assertEqual(3, self.context.is_closed.call_count)
         self.assertEqual(2 * 3, self.target._process_ticker.call_count)
+        self.assertEqual(2 * 3, self.target._process_trades.call_count)
         self.assertEqual(2 * 1, self.target._process_balance.call_count)
 
     def test__process_ticker(self):

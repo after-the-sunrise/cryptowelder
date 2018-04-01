@@ -3,7 +3,8 @@ from hmac import new
 from threading import Thread, Lock
 from time import sleep
 
-from cryptowelder.context import CryptowelderContext, Ticker, Balance, AccountType, UnitType
+from cryptowelder.context import CryptowelderContext, Ticker, Balance, AccountType, UnitType, Transaction, \
+    TransactionType
 
 
 class ZaifWelder:
@@ -32,9 +33,13 @@ class ZaifWelder:
 
             codes = self.__context.get_property(self._ID, 'codes', 'btc_jpy,bch_btc,eth_btc').split(',')
 
-            threads = [Thread(target=self._process_ticker, args=(code,)) for code in codes]
+            threads = [
+                Thread(target=self._process_balance)
+            ]
 
-            threads.append(Thread(target=self._process_balance))
+            for code in codes:
+                threads.append(Thread(target=self._process_ticker, args=(code,)))
+                threads.append(Thread(target=self._process_trades, args=(code,)))
 
             for t in threads:
                 t.start()
@@ -73,7 +78,7 @@ class ZaifWelder:
 
             self.__logger.warn('Ticker Failure - %s : %s - %s', code, type(e), e.args)
 
-    def _query_private(self, path):
+    def _query_private(self, path, *, parameters={}):
 
         apikey = self.__context.get_property(self._ID, 'apikey', None)
         secret = self.__context.get_property(self._ID, 'secret', None)
@@ -87,6 +92,9 @@ class ZaifWelder:
             time = self.__context.get_now().timestamp()
 
             data = 'nonce=%.3f&method=%s' % (time, path)
+
+            for k, v in parameters.items():
+                data = data + ('&%s=%s' % (k, v))
 
             digest = new(secret.encode(), data.encode(), sha512).hexdigest()
 
@@ -136,6 +144,57 @@ class ZaifWelder:
         except Exception as e:
 
             self.__logger.warn('Cash Failure : %s - %s', type(e), e.args)
+
+    def _process_trades(self, code, *, count=100):
+
+        try:
+
+            params = {
+                'currency_pair': code,
+                'count': count,
+            }
+
+            while True:
+
+                response = self._query_private('trade_history', parameters=params)
+
+                if response is None or response.get('success', 1) != 1:
+                    break
+
+                trades = response.get('return', {})
+
+                if len(trades) <= 0:
+                    break
+
+                values = {}
+
+                for i, t in trades.items():
+                    params['end_id'] = min(params.get('end_id', int(i)), int(i) - 1)
+
+                    side = t.get('your_action')  # 'ask' -> sell, 'bid' -> buy, 'both' -> cross
+                    side = +1 if side == 'ask' else -1 if side == 'bid' else 0
+
+                    values[i] = Transaction()
+                    values[i].tx_site = self._ID
+                    values[i].tx_code = code
+                    values[i].tx_type = TransactionType.TRADE
+                    values[i].tx_acct = AccountType.CASH
+                    values[i].tx_oid = str(i)
+                    values[i].tx_eid = str(i)
+                    values[i].tx_time = self.__context.parse_iso_timestamp(t.get('timestamp'))
+                    values[i].tx_inst = -side * t.get('amount')
+                    values[i].tx_fund = +side * t.get('amount') * t.get('price') - t.get('fee') + t.get('bonus')
+
+                self.__logger.debug('Transactions : %s - fetched=[%s] id=[%s]', code, len(values), params['end_id'])
+
+                results = self.__context.save_transactions(values.values())
+
+                if len(results) <= 0:
+                    break
+
+        except Exception as e:
+
+            self.__logger.warn('Trade Failure : %s - %s', type(e), e.args)
 
 
 def main():
