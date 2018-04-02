@@ -225,9 +225,9 @@ class BitmexWelder:
                     contracts = execution.get('lastQty') * self._SIDE[execution.get('side')]
 
                     if multiplier >= 0:
-                        fund_size = -contracts * +multiplier * self._SATOSHI * execution.get('lastPx')
+                        fund_size = -contracts * (multiplier * self._SATOSHI) * execution.get('lastPx')
                     else:
-                        fund_size = -contracts * -multiplier * self._SATOSHI / execution.get('lastPx')
+                        fund_size = -contracts * (multiplier * self._SATOSHI) / execution.get('lastPx')
 
                     fund_size = fund_size - (self._SATOSHI * execution.get('execComm', 0))
 
