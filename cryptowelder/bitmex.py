@@ -82,6 +82,8 @@ class BitmexWelder:
 
                 state = instrument.get('state')
 
+                multiplier = instrument.get('multiplier')
+
                 if (
                         code is None or code not in codes
                 ) and (
@@ -91,7 +93,7 @@ class BitmexWelder:
 
                 # Cache ticker symbols for transaction query.
                 if state != 'Unlisted':
-                    self.__code_cache[code] = now
+                    self.__code_cache[code] = (now, multiplier)
 
                 ticker = Ticker()
                 ticker.tk_site = self._ID
@@ -175,10 +177,18 @@ class BitmexWelder:
 
         cutoff = self.__context.get_now() - timedelta(hours=1)
 
-        threads = [
-            Thread(target=self._fetch_transaction, args=(code,))
-            for code, timestamp in self.__code_cache.items() if timestamp >= cutoff
-        ]
+        threads = []
+
+        for code, details in self.__code_cache.items():
+
+            timestamp = details[0]
+
+            if timestamp < cutoff:
+                continue
+
+            multiplier = details[1]
+
+            threads.append(Thread(target=self._fetch_transaction, args=(code, multiplier)))
 
         for t in threads:
             t.start()
@@ -186,7 +196,7 @@ class BitmexWelder:
         for t in threads:
             t.join()
 
-    def _fetch_transaction(self, code, *, limit=100):
+    def _fetch_transaction(self, code, multiplier, *, limit=100):
 
         try:
 
@@ -209,10 +219,17 @@ class BitmexWelder:
 
                     count = count + 1
 
-                    # TODO : Handle inverse, funding and commission.
+                    if 'Trade' != execution.get('execType'):
+                        continue  # TODO : Handle 'Funding'
 
-                    if 'Funding' == execution.get('execType'):
-                        continue
+                    contracts = execution.get('lastQty') * self._SIDE[execution.get('side')]
+
+                    if multiplier >= 0:
+                        fund_size = -contracts * +multiplier * self._SATOSHI * execution.get('lastPx')
+                    else:
+                        fund_size = -contracts * -multiplier * self._SATOSHI / execution.get('lastPx')
+
+                    fund_size = fund_size - (self._SATOSHI * execution.get('execComm', 0))
 
                     value = Transaction()
                     value.tx_site = self._ID
@@ -222,8 +239,8 @@ class BitmexWelder:
                     value.tx_oid = execution.get('orderID')
                     value.tx_eid = execution.get('execID')
                     value.tx_time = self.__context.parse_iso_timestamp(execution.get('transactTime'))
-                    value.tx_inst = execution.get('lastQty') * self._SIDE[execution.get('side')]
-                    value.tx_fund = execution.get('lastPx') * value.tx_inst * -1
+                    value.tx_inst = contracts
+                    value.tx_fund = fund_size
 
                     values.append(value)
 
