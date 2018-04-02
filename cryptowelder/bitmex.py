@@ -222,15 +222,6 @@ class BitmexWelder:
                     if 'Trade' != execution.get('execType'):
                         continue  # TODO : Handle 'Funding'
 
-                    contracts = execution.get('lastQty') * self._SIDE[execution.get('side')]
-
-                    if multiplier >= 0:
-                        fund_size = -contracts * (multiplier * self._SATOSHI) * execution.get('lastPx')
-                    else:
-                        fund_size = -contracts * (multiplier * self._SATOSHI) / execution.get('lastPx')
-
-                    fund_size = fund_size - (self._SATOSHI * execution.get('execComm', 0))
-
                     value = Transaction()
                     value.tx_site = self._ID
                     value.tx_code = execution.get('symbol')
@@ -239,8 +230,17 @@ class BitmexWelder:
                     value.tx_oid = execution.get('orderID')
                     value.tx_eid = execution.get('execID')
                     value.tx_time = self.__context.parse_iso_timestamp(execution.get('transactTime'))
-                    value.tx_inst = contracts
-                    value.tx_fund = fund_size
+
+                    contracts = execution.get('lastQty') * self._SIDE[execution.get('side')]
+
+                    commission = (execution.get('execComm', 0) * self._SATOSHI)
+
+                    if multiplier >= 0:
+                        value.tx_inst = +contracts
+                        value.tx_fund = -contracts * (multiplier * self._SATOSHI) * execution.get('lastPx') - commission
+                    else:
+                        value.tx_inst = -contracts * (multiplier * self._SATOSHI) / execution.get('lastPx') - commission
+                        value.tx_fund = -contracts
 
                     values.append(value)
 
