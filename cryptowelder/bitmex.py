@@ -12,7 +12,7 @@ from cryptowelder.context import CryptowelderContext, Ticker, Balance, AccountTy
 
 class BitmexWelder:
     _ID = 'bitmex'
-    _SIDE = {'Buy': Decimal('+1'), 'Sell': Decimal('-1')}
+    _ZERO = Decimal('0')
     _SATOSHI = Decimal('0.00000001')
 
     def __init__(self, context):
@@ -213,46 +213,56 @@ class BitmexWelder:
 
                 values = []
 
-                count = 0
-
                 for execution in executions if executions is not None else []:
-
-                    count = count + 1
-
-                    if 'Trade' != execution.get('execType'):
-                        continue  # TODO : Handle 'Funding'
 
                     value = Transaction()
                     value.tx_site = self._ID
                     value.tx_code = execution.get('symbol')
-                    value.tx_type = TransactionType.TRADE
                     value.tx_acct = AccountType.MARGIN
                     value.tx_oid = execution.get('orderID')
                     value.tx_eid = execution.get('execID')
                     value.tx_time = self.__context.parse_iso_timestamp(execution.get('transactTime'))
 
-                    contracts = execution.get('lastQty') * self._SIDE[execution.get('side')]
+                    side = execution.get('side', '')
+                    comm = Decimal(execution.get('execComm', 0))
 
-                    commission = (execution.get('execComm', 0) * self._SATOSHI)
+                    if side == '':
 
-                    if multiplier >= 0:
-                        value.tx_inst = +contracts
-                        value.tx_fund = -contracts * (multiplier * self._SATOSHI) * execution.get('lastPx') - commission
+                        value.tx_type = TransactionType.SWAP
+
+                        if multiplier >= 0:
+                            value.tx_inst = self._ZERO
+                            value.tx_fund = self._SATOSHI * -comm
+                        else:
+                            value.tx_inst = self._SATOSHI * -comm
+                            value.tx_fund = self._ZERO
+
                     else:
-                        value.tx_inst = -contracts * (multiplier * self._SATOSHI) / execution.get('lastPx') - commission
-                        value.tx_fund = -contracts
+
+                        value.tx_type = TransactionType.TRADE
+
+                        sign = +1 if side == 'Buy' else -1 if side == 'Sell' else 0
+                        size = Decimal(execution.get('lastQty') * sign)
+                        last = Decimal(execution.get('lastPx'))
+
+                        if multiplier >= 0:
+                            value.tx_inst = (+size)
+                            value.tx_fund = (-size * multiplier * last - comm) * self._SATOSHI
+                        else:
+                            value.tx_inst = (-size * multiplier / last - comm) * self._SATOSHI
+                            value.tx_fund = (-size)
 
                     values.append(value)
 
-                self.__logger.debug('Transactions - %s : fetched=[%s] extracted=[%s] offset=[%s]',
-                                    code, count, len(values), parameters.get('start'))
+                self.__logger.debug('Transactions - %s : extracted=[%s] offset=[%s]',
+                                    code, len(values), parameters.get('start'))
 
                 results = self.__context.save_transactions(values)
 
                 if len(results) <= 0:
                     break
 
-                parameters['start'] = parameters['start'] + count
+                parameters['start'] = parameters['start'] + len(values)
 
         except Exception as e:
 
