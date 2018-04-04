@@ -18,7 +18,7 @@ for visualizing time series data of market prices, account balances, positions, 
 
 ### :zap: Time Series Data Visualization
 Collect and display graphs/tables of various time series data.
-* Market Prices (Ask, Bid, Last)
+* Market Prices
 * Account Deposits and Collaterals
 * Margin Positions and Unrealized P/L
 * Daily/Monthly trading P/L
@@ -55,6 +55,12 @@ without any special deserialization requirements.
 
 ## Getting Started
 
+### Mechanics
+The application consists of the following components *welded* together:
+* Set of Python scripts for scraping time-series data via public/private APIs.
+* RDBMS (PostgreSQL) for storing the time-series data.
+* Grafana for visualization and alerting of the time-series data.
+
 ### Prerequisites
 * Linux machine with command line interface and direct internet access. Recommendation:
     * Cloud-hosted VM with SSH and root access. (cf: [AWS](https://aws.amazon.com/ec2/), [Azure](https://azure.microsoft.com/en-us/services/virtual-machines/), [GCE](https://cloud.google.com/compute/?hl=ja))
@@ -65,14 +71,8 @@ without any special deserialization requirements.
 * [PostgreSQL](https://www.postgresql.org/) 10.x or later, or privileges to install one if not already installed.  
 * [Grafana](https://grafana.com/) 5.x or later installation. (Root privilege not required.) 
 * Access tokens from each of the exchanges for private API access. 
-* Basic knowledge and experience of Linux, for application configuration and installation.
-* Basic knowledge and experience of Python and SQL, for application logic customization. 
-
-### Mechanics
-The application consists of the following components *welded* together:
-* Set of Python scripts for scraping data via public/private APIs.
-* RDBMS (PostgreSQL) for storing the time-series data.
-* Grafana for visualization and alerting of the time-series data.
+* Basic knowledge/experience of Linux to install the applications.
+* Basic knowledge/experience of Python and SQL to configure/customize the application. 
 
 ### Installation Steps
 1. Install and configure PostgreSQL database instance.
