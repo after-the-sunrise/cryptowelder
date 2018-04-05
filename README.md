@@ -6,6 +6,9 @@
 [coverall-page]:https://coveralls.io/github/after-the-sunrise/cryptowelder?branch=master
 [coverall-icon]:https://coveralls.io/repos/github/after-the-sunrise/cryptowelder/badge.svg?branch=master
 
+* :us: [English](./README.md)
+* :jp: [日本語](./README_jp.md)
+
 ## Overview
 
 **Cryptowelder** is a cryptocurrency trade monitoring application, 
@@ -57,19 +60,19 @@ without any special deserialization requirements.
 
 ### Mechanics
 The application consists of the following components *welded* together:
-* Set of Python scripts for scraping time-series data via public/private APIs.
-* RDBMS (PostgreSQL) for storing the time-series data.
-* Grafana for visualization and alerting of the time-series data.
+* Set of [Python](https://www.python.org/) scripts for scraping time-series data via public/private APIs.
+* Relational database ([PostgreSQL](https://www.postgresql.org/)) for storing the time-series data.
+* [Grafana](https://grafana.com/) for visualization and alerting of the time-series data.
 
 ### Prerequisites
 * Linux machine with command line interface and direct internet access. Recommendation:
-    * Cloud-hosted VM with SSH and root access. (cf: [AWS](https://aws.amazon.com/ec2/), [Azure](https://azure.microsoft.com/en-us/services/virtual-machines/), [GCE](https://cloud.google.com/compute/?hl=ja))
+    * Cloud-hosted VM with SSH access. (cf: [AWS](https://aws.amazon.com/ec2/), [Azure](https://azure.microsoft.com/en-us/services/virtual-machines/), [GCE](https://cloud.google.com/compute/?hl=ja))
     * Modern linux operating system. (cf: [CentOS](https://www.centos.org/) 7.x x64)
     * 2GB or more memory.
     * 50GB or more disk space, preferably SSD.
-* [Python](https://www.python.org/) 3.x or later with pip. `pyenv` + `pyenv-virtualenv` are recommended.
-* [PostgreSQL](https://www.postgresql.org/) 10.x or later, or privileges to install one if not already installed.  
-* [Grafana](https://grafana.com/) 5.x or later installation. (Root privilege not required.) 
+* Python 3.x or later with pip. `pyenv` + `pyenv-virtualenv` are recommended.
+* PostgreSQL 10.x or later.  
+* Grafana 5.x or later installation. 
 * Access tokens from each of the exchanges for private API access. 
 * Basic knowledge/experience of Linux to install the applications.
 * Basic knowledge/experience of Python and SQL to configure/customize the application. 
@@ -102,3 +105,8 @@ below are some of the setups recommended for secure access.
 * Purchase a custom domain (cf: [Google Domain](https://domains.google/)), obtain SSL certificate (cf: [Let’s Encrypt](https://letsencrypt.org/)), and switch Grafana's access protocol from `HTTP` to `HTTPS`.
 
 Note that this list is **not comprehensive**. Contact your system administrator if you are not familiar with server securities in general.
+
+
+## DISCLAIMER
+Use at your own risk, following the [LICENSE](./LICENSE). 
+Author has no plan to provide specific support for individual setups nor inquiries.
