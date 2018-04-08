@@ -88,7 +88,8 @@ The application consists of the following components *welded* together:
     3. Launch the script (`sh cryptowelder.sh`) to start collecting and storing data into the database. 
 3. Install and configure Grafana instance.
     1. Configure Grafana users and security policies. ([localhost:3000](http://localhost:3000))
-    2. Import the [preconfigured dashboard template](./etc/GRAFANA.json).
+    2. Setup up the datasource as `cryptowelder`. (Use `grafana` login.)
+    3. Import the [preconfigured dashboard template](./etc/GRAFANA.json).
     
 ### Secure Access
 Typically, multiple layers of security policies are preconfigured by default, which blocks access to Grafana from public internet.

@@ -60,7 +60,7 @@ HTTPを利用したテキスト形式でも取得可能です。
 このアプリケーションは、下記の組み合わせで構成されています：
 * 時系列データをパブリック・プライベートAPIから収集するための[Python](https://www.python.org/)スクリプト
 * 収集した時系列データを保存するための関係データベース ([PostgreSQL](https://www.postgresql.org/))
-* 時系列データを可視化および通知を行うための[Grafana](https://grafana.com/)
+* 時系列データの可視化および通知を行うための[Grafana](https://grafana.com/)
 
 ### システム要件
 * Linuxマシン、コマンドライン操作およびインターネットへの直接続。 推薦要件：
@@ -86,12 +86,13 @@ HTTPを利用したテキスト形式でも取得可能です。
     3. スクリプト(`sh cryptowelder.sh`)を起動し、データの収集とデータベースへの保存とを開始 
 3. Grafanaのインストールおよび起動
     1. Grafanaユーザのセキュリティ権限を設定 ([localhost:3000](http://localhost:3000))
-    2. [構築済みのテンプレート](./etc/GRAFANA.json)をインポート
+    2. データソースを`cryptowelder`として追加（ユーザは`grafana`を利用）
+    3. [構築済みのテンプレート](./etc/GRAFANA.json)をインポート
 
 ### 安全の確保
 通常、複数のセキュリティポリシーが標準で有効となっているため、インターネットから直接Grafanaへアクセスできないことがあります。
 
-簡便的な回避手段として[SSHトンネリング](https://en.wikipedia.org/wiki/Tunneling_protocol#Secure_Shell_tunneling)を利用する方法があります。
+簡易的な回避手段として[SSHトンネリング](https://en.wikipedia.org/wiki/Tunneling_protocol#Secure_Shell_tunneling)を利用する方法があります。
 ```
 ssh -L 3000:localhost:3000 cryptowelder@my-virtual-machine
 ```
