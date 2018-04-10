@@ -99,6 +99,14 @@ class TestPoloniexWelder(TestCase):
         self.assertEqual('0.05646490', tickers[2].tk_bid)
         self.assertEqual('0.05646514', tickers[2].tk_ltp)
 
+        # Query Empty
+        self.context.requests_get.reset_mock()
+        self.context.requests_get.return_value = {}
+        self.context.save_tickers.reset_mock()
+        self.target._process_ticker()
+        self.context.requests_get.assert_called_once()
+        self.context.save_tickers.assert_called_once()
+
         # Query None
         self.context.requests_get.reset_mock()
         self.context.requests_get.return_value = None

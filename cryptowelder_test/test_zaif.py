@@ -5,11 +5,11 @@ from unittest.mock import MagicMock
 
 from pytz import utc
 
-from cryptowelder.context import CryptowelderContext
+from cryptowelder.context import CryptowelderContext, TransactionType, AccountType
 from cryptowelder.zaif import ZaifWelder
 
 
-class TestPoloniexWelder(TestCase):
+class TestZaifWelder(TestCase):
     FORMAT = '%Y-%m-%d %H:%M:%S.%f %Z'
 
     def setUp(self):
@@ -65,6 +65,14 @@ class TestPoloniexWelder(TestCase):
         self.assertEqual(Decimal('723000'), tickers[0].tk_bid)
         self.assertEqual(Decimal('723000'), tickers[0].tk_ltp)
 
+        # Query Empty
+        self.context.requests_get.reset_mock()
+        self.context.requests_get.return_value = {}
+        self.context.save_tickers.reset_mock()
+        self.target._process_ticker('btc_jpy')
+        self.context.requests_get.assert_called_once()
+        self.context.save_tickers.assert_called_once()
+
         # Query None
         self.context.requests_get.reset_mock()
         self.context.requests_get.return_value = None
@@ -80,6 +88,39 @@ class TestPoloniexWelder(TestCase):
         self.target._process_ticker('btc_jpy')
         self.context.requests_get.assert_called_once()
         self.context.save_tickers.assert_not_called()
+
+    def test__query_private(self):
+        now = datetime.fromtimestamp(1234567890.123456, utc)
+        self.context.get_now = MagicMock(return_value=now)
+        self.context.requests_post = MagicMock(return_value='json')
+
+        # With Parameter
+        self.context.get_property = MagicMock(side_effect=['foo', 'bar'])
+        self.assertEqual('json', self.target._query_private('some_path', parameters={'hoge': 'piyo'}))
+        self.assertEqual('https://api.zaif.jp/tapi', self.context.requests_post.call_args[0][0])
+        headers = self.context.requests_post.call_args[1]['headers']
+        self.assertEqual(2, len(headers))
+        self.assertEqual('foo', headers['key'])
+        self.assertEqual('841e8622e8e5e5b3fdc7d555861294dc7d4e3854d59207e62fc7ef8cd511642e' +
+                         '1a6665cecd683d3df6fa980a5f527651592b2be0240ffe04f73aa025d84d2e18', headers['sign'])
+        data = self.context.requests_post.call_args[1]['data']
+        self.assertEqual('nonce=1234567890.123&method=some_path&hoge=piyo', data)
+
+        # No Parameters
+        self.context.get_property = MagicMock(side_effect=['foo', 'bar'])
+        self.assertEqual('json', self.target._query_private('some_path'))
+        self.assertEqual('https://api.zaif.jp/tapi', self.context.requests_post.call_args[0][0])
+        headers = self.context.requests_post.call_args[1]['headers']
+        self.assertEqual(2, len(headers))
+        self.assertEqual('foo', headers['key'])
+        self.assertEqual('930b53d0a387f72714a2bc841ea2bc44d2beaeca3678f0a87a3ca7bfa140ac25' +
+                         'ab01418a6bdaa5a76d328461dc95fce8a12f019d6a734239d30668cc2686cbc2', headers['sign'])
+        data = self.context.requests_post.call_args[1]['data']
+        self.assertEqual('nonce=1234567890.123&method=some_path', data)
+
+        # No Token
+        self.context.get_property = MagicMock(return_value=None)
+        self.assertIsNone(self.target._query_private('some_path'))
 
     def test__process_balance(self):
         now = datetime.fromtimestamp(1234567890.123456, utc)
@@ -155,6 +196,125 @@ class TestPoloniexWelder(TestCase):
         self.target._process_balance()
         self.target._query_private.assert_called_once()
         self.context.save_balances.assert_not_called()
+
+    def test__process_trade(self):
+        side_effects = [
+            CryptowelderContext._parse("""
+                {
+                    "success": 1,
+                    "return": {
+                        "182": {
+                            "currency_pair": "btc_jpy",
+                            "action": "bid",
+                            "amount": 0.03,
+                            "price": 56000,
+                            "fee": 0,
+                            "your_action": "ask",
+                            "bonus": 1.6,
+                            "timestamp": 1402018713,
+                            "comment" : "demo"
+                        }
+                    }
+                }
+            """),
+            CryptowelderContext._parse("""
+                {
+                    "success": 1,
+                    "return": {
+                        "180": {
+                            "currency_pair": "btc_jpy",
+                            "action": "ask",
+                            "amount": 0.04,
+                            "price": 56001,
+                            "fee": 3.2,
+                            "your_action": "bid",
+                            "bonus": 0,
+                            "timestamp": 1402018710,
+                            "comment" : "test"
+                        }
+                    }
+                }
+            """),
+            CryptowelderContext._parse("""
+                {
+                    "success": 1
+                }
+            """)
+        ]
+
+        # Query 3 times
+        self.target._query_private = MagicMock(side_effect=side_effects)
+        self.context.save_transactions = MagicMock(return_value=[None])
+        self.target._process_trades('foo_bar')
+        self.target._query_private.assert_called()
+        self.context.save_transactions.assert_called()
+        
+        calls = self.context.save_transactions.call_args_list
+        self.assertEqual(2, len(calls))
+
+        values = list(calls[0][0][0])
+        self.assertEqual(1, len(values))
+        self.assertEqual('zaif', values[0].tx_site)
+        self.assertEqual('foo_bar', values[0].tx_code)
+        self.assertEqual(TransactionType.TRADE, values[0].tx_type)
+        self.assertEqual(AccountType.CASH, values[0].tx_acct)
+        self.assertEqual('182', values[0].tx_oid)
+        self.assertEqual('182', values[0].tx_eid)
+        self.assertEqual('2014-06-06 01:38:33.000000 UTC', values[0].tx_time.strftime(self.FORMAT))
+        self.assertEqual(Decimal('-0.03'), values[0].tx_inst)
+        self.assertEqual(Decimal('1681.60'), values[0].tx_fund)
+
+        values = list(calls[1][0][0])
+        self.assertEqual(1, len(values))
+        self.assertEqual('zaif', values[0].tx_site)
+        self.assertEqual('foo_bar', values[0].tx_code)
+        self.assertEqual(TransactionType.TRADE, values[0].tx_type)
+        self.assertEqual(AccountType.CASH, values[0].tx_acct)
+        self.assertEqual('180', values[0].tx_oid)
+        self.assertEqual('180', values[0].tx_eid)
+        self.assertEqual('2014-06-06 01:38:30.000000 UTC', values[0].tx_time.strftime(self.FORMAT))
+        self.assertEqual(Decimal('0.04'), values[0].tx_inst)
+        self.assertEqual(Decimal('-2243.24'), values[0].tx_fund)
+
+        # Nothing saved
+        self.target._query_private = MagicMock(side_effect=side_effects)
+        self.context.save_transactions = MagicMock(return_value=None)
+        self.target._process_trades('foo_bar')
+        self.target._query_private.assert_called_once()
+        self.context.save_transactions.assert_called_once()
+
+        # Empty Trades
+        self.target._query_private = MagicMock(return_value=CryptowelderContext._parse("""
+            {
+                "success": 1,
+                "return": {
+                }
+            }
+        """))
+        self.context.save_transactions = MagicMock(return_value=[None])
+        self.target._process_trades('foo_bar')
+        self.target._query_private.assert_called_once()
+        self.context.save_transactions.assert_not_called()
+
+        # Failure Response
+        self.target._query_private = MagicMock(return_value=CryptowelderContext._parse("""
+            {
+                "success": 0,
+                "return": {
+                }
+            }
+        """))
+        self.context.save_transactions = MagicMock(return_value=[None])
+        self.target._process_trades('foo_bar')
+        self.target._query_private.assert_called_once()
+        self.context.save_transactions.assert_not_called()
+
+        # Exception Response
+        self.target._query_private = MagicMock(side_effect=Exception('test'))
+        self.context.save_transactions = MagicMock(return_value=[None])
+        self.target._process_trades('foo_bar')
+        self.target._query_private.assert_called_once()
+        self.context.save_transactions.assert_not_called()
 
 
 if __name__ == '__main__':

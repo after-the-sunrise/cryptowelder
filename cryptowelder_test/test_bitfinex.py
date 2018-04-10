@@ -55,6 +55,14 @@ class TestBitfinexWelder(TestCase):
         self.assertEqual('8901.2', tickers[0].tk_bid)
         self.assertEqual('8901.4', tickers[0].tk_ltp)
 
+        # Query Empty
+        self.context.requests_get.reset_mock()
+        self.context.requests_get.return_value = {}
+        self.context.save_tickers.reset_mock()
+        self.target._process_ticker("FOO_BAR")
+        self.context.requests_get.assert_called_once()
+        self.context.save_tickers.assert_called_once()
+
         # Query None
         self.context.requests_get.reset_mock()
         self.context.requests_get.return_value = None
