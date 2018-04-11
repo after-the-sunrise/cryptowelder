@@ -174,7 +174,7 @@ class BitflyerWelder:
                 ticker.tk_bid = json.get('best_bid')
                 ticker.tk_ltp = json.get('ltp')
 
-            self.__context.save_tickers([ticker])
+            self.__context.save_tickers([ticker] if ticker.tk_time is not None else [])
 
             self.__logger.debug('Ticker : %s - %s', code, ticker)
 

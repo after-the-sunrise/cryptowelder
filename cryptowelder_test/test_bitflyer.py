@@ -153,6 +153,13 @@ class TestBitflyerWelder(TestCase):
         self.assertEqual(Decimal('30000'), tickers[0].tk_bid)
         self.assertEqual(Decimal('31690'), tickers[0].tk_ltp)
 
+        # Empty Query
+        self.context.save_tickers.reset_mock()
+        self.context.requests_get = MagicMock(return_value=None)
+        self.target._process_ticker("FOO_BAR")
+        tickers = self.context.save_tickers.call_args[0][0]
+        self.assertEqual(0, len(tickers))
+
     def test__process_ticker_matured(self):
         self.target._fetch_special_quotation = MagicMock(return_value=Decimal('1.234'))
         self.target._parse_expiry = MagicMock(return_value=datetime.fromtimestamp(1234567890))
