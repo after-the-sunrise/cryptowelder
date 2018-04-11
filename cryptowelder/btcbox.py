@@ -59,6 +59,9 @@ class BtcboxWelder:
 
             value = self.__context.requests_get(self.__endpoint + '/api/v1/ticker?coin=' + coin)
 
+            if value is None:
+                return
+
             ticker = Ticker()
             ticker.tk_site = self._ID
             ticker.tk_code = coin
@@ -117,6 +120,9 @@ class BtcboxWelder:
             now = self.__context.get_now()
 
             balance = self._query_private('/api/v1/balance')
+
+            if balance is None:
+                return
 
             if not balance.get('result', True):
                 raise Exception('Code : %s' % balance.get('code'))
