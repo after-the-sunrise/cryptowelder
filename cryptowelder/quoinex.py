@@ -93,7 +93,7 @@ class QuoinexWelder:
 
             now = self.__context.get_now()
 
-            for product in products:
+            for product in products if products is not None else []:
 
                 if code != product.get('currency_pair_code'):
                     continue
@@ -145,7 +145,7 @@ class QuoinexWelder:
 
         try:
 
-            for product in products:
+            for product in products if products is not None else []:
 
                 if code != product.get('currency_pair_code'):
                     continue
@@ -167,7 +167,7 @@ class QuoinexWelder:
 
                     values = []
 
-                    for execution in result.get('models', []):
+                    for execution in result.get('models', []) if result is not None else []:
                         value = Transaction()
                         value.tx_site = self._ID
                         value.tx_code = code
