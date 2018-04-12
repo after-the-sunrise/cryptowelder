@@ -60,13 +60,13 @@ class MetricWelder:
 
             sleep(interval)
 
-    def process_metric(self, *, base_time=None, default_count=3):
+    def process_metric(self, *, default_time=None, default_count=3):
 
-        time = base_time if base_time is not None else self.__context.get_now()
+        base_time = default_time if default_time is not None else self.__context.get_now()
 
         count = int(self.__context.get_property(self._ID, 'timestamp', default_count))
 
-        timestamps = [time.replace(second=0, microsecond=0) - timedelta(minutes=i) for i in range(0, count)]
+        timestamps = [base_time.replace(second=0, microsecond=0) - timedelta(minutes=i) for i in range(0, count)]
 
         self.__logger.debug('Metrics : %s', [t.strftime('%Y-%m-%d %H:%M') for t in timestamps])
 
@@ -406,7 +406,7 @@ def main_historical():
         if timestamp >= datetime.now().astimezone(utc):
             break
 
-        target.process_metric(base_time=timestamp, default_count=1)
+        target.process_metric(default_time=timestamp, default_count=1)
 
         timestamp = timestamp + timedelta(minutes=60)
 
