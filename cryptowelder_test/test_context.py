@@ -82,6 +82,26 @@ class TestCryptowelderContext(TestCase):
     def test_get_now(self):
         self.assertIsNotNone(self.target.get_now())
 
+    def test_get_nonce(self):
+
+        values = set()
+
+        def execute():
+            for i in range(0, 100):
+                nonce = self.target.get_nonce('test')
+                millis = int(nonce.timestamp() * 1000)
+                values.add(millis)
+
+        threads = [Thread(target=execute) for i in range(0, 8)]
+
+        for t in threads:
+            t.start()
+
+        for t in threads:
+            t.join()
+
+        self.assertEqual(100 * len(threads), len(values))
+
     def test_parse_iso_timestamp(self):
         # Unix Time
         result = self.target.parse_iso_timestamp('1234567890')

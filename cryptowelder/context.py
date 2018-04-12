@@ -1,3 +1,4 @@
+from collections import defaultdict
 from collections import namedtuple
 from configparser import ConfigParser
 from datetime import datetime, timedelta
@@ -9,6 +10,7 @@ from logging.handlers import TimedRotatingFileHandler, BufferingHandler
 from math import nan
 from os import path
 from re import compile
+from threading import Lock
 from time import sleep
 
 from prometheus_client import Gauge, start_http_server
@@ -59,6 +61,10 @@ class CryptowelderContext:
         self.__session = scoped_session(sessionmaker(bind=self.__engine))
         self.__logger.info('Database : %s (read_only=%s)', database, read_only)
 
+        # Cache
+        self.__nonce_lock = defaultdict(lambda: Lock())
+        self.__nonce_time = {}
+
     def _create_config(self, paths):
 
         config = ConfigParser()
@@ -97,6 +103,23 @@ class CryptowelderContext:
 
     def get_now(self):
         return datetime.now(tz=utc)
+
+    def get_nonce(self, key, *, delta=timedelta(milliseconds=1)):
+
+        while True:
+
+            with self.__nonce_lock[key]:
+
+                current = self.get_now()
+
+                previous = self.__nonce_time.get(key)
+
+                if previous is not None and previous >= current - delta:
+                    continue
+
+                self.__nonce_time[key] = current
+
+                return current
 
     def parse_iso_timestamp(self, value):
         return self._parse_iso_timestamp(value)
