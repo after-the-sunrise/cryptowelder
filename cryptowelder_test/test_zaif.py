@@ -120,7 +120,9 @@ class TestZaifWelder(TestCase):
 
         # No Token
         self.context.get_property = MagicMock(return_value=None)
+        self.context.requests_post.reset_mock()
         self.assertIsNone(self.target._query_private('some_path'))
+        self.context.requests_post.assert_not_called()
 
     def test__process_balance(self):
         now = datetime.fromtimestamp(1234567890.123456, utc)
@@ -248,7 +250,7 @@ class TestZaifWelder(TestCase):
         self.target._process_trades('foo_bar')
         self.target._query_private.assert_called()
         self.context.save_transactions.assert_called()
-        
+
         calls = self.context.save_transactions.call_args_list
         self.assertEqual(2, len(calls))
 

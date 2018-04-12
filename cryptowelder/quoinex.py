@@ -28,7 +28,7 @@ class QuoinexWelder:
 
         self.__thread.join()
 
-    def _loop(self):
+    def _loop(self, *, default_interval=15):
 
         self.__logger.info('Processing : %s', self.__endpoint)
 
@@ -45,13 +45,15 @@ class QuoinexWelder:
             for t in threads:
                 t.join()
 
-            sleep(float(self.__context.get_property(self._ID, 'interval', 15)))
+            sleep(float(self.__context.get_property(self._ID, 'interval', default_interval)))
 
         self.__logger.info('Terminated.')
 
     def _process_products(self):
 
         try:
+
+            now = self.__context.get_now()
 
             products = self.__context.requests_get(self.__endpoint + '/products')
 
@@ -60,7 +62,7 @@ class QuoinexWelder:
             threads = []
 
             for product in codes:
-                threads.append(Thread(target=self._process_ticker, args=(product, products)))
+                threads.append(Thread(target=self._process_ticker, args=(now, product, products)))
                 threads.append(Thread(target=self._process_transaction, args=(product, products)))
 
             for t in threads:
@@ -87,11 +89,9 @@ class QuoinexWelder:
 
         return value
 
-    def _process_ticker(self, code, products):
+    def _process_ticker(self, now, code, products):
 
         try:
-
-            now = self.__context.get_now()
 
             for product in products if products is not None else []:
 

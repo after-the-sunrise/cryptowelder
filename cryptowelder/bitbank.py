@@ -28,7 +28,7 @@ class BitbankWelder:
 
         self.__thread.join()
 
-    def _loop(self):
+    def _loop(self, *, default_interval=15):
 
         self.__logger.info('Processing : %s', self.__endpoint)
 
@@ -52,7 +52,7 @@ class BitbankWelder:
             for t in threads:
                 t.join()
 
-            sleep(float(self.__context.get_property(self._ID, 'interval', 15)))
+            sleep(float(self.__context.get_property(self._ID, 'interval', default_interval)))
 
         self.__logger.info('Terminated.')
 
@@ -64,7 +64,7 @@ class BitbankWelder:
 
             response = self.__context.requests_get('https://public.bitbank.cc/%s/ticker' % pair)
 
-            if response.get('success', 1) != 1:
+            if response is None or response.get('success', 1) != 1:
                 raise Exception(str(response))
 
             data = response.get('data', {})

@@ -256,7 +256,9 @@ class TestBitflyerWelder(TestCase):
 
         # No Key/Secret
         self.context.get_property = MagicMock(return_value=None)
+        self.context.requests_get.reset_mock()
         self.assertIsNone(self.target._query_private('/p1/p2?a=b'))
+        self.context.requests_get.assert_not_called()
 
     def test__process_position(self):
         now = datetime.fromtimestamp(1234567890)

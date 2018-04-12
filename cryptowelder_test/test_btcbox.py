@@ -110,7 +110,9 @@ class TestBtcboxWelder(TestCase):
 
         # No Token
         self.context.get_property = MagicMock(return_value=None)
+        self.context.requests_post.reset_mock()
         self.assertIsNone(self.target._query_private('some_path'))
+        self.context.requests_post.assert_not_called()
 
     def test__process_balance(self):
         now = datetime.fromtimestamp(1234567890.123456, utc)
