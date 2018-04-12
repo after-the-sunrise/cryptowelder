@@ -66,7 +66,7 @@ class MetricWelder:
 
         count = int(self.__context.get_property(self._ID, 'timestamp', default_count))
 
-        timestamps = [base_time.replace(second=0, microsecond=0) - timedelta(minutes=i) for i in range(0, count)]
+        timestamps = [time.replace(second=0, microsecond=0) - timedelta(minutes=i) for i in range(0, count)]
 
         self.__logger.debug('Metrics : %s', [t.strftime('%Y-%m-%d %H:%M') for t in timestamps])
 
