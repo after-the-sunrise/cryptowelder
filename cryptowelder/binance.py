@@ -51,6 +51,9 @@ class BinanceWelder:
 
             quotes = self.__context.requests_get(self.__endpoint + '/api/v3/ticker/bookTicker')
 
+            if trades is None and quotes is None:
+                return
+
             values = []
 
             codes = self.__context.get_property(self._ID, 'codes', 'BTCUSDT,ETHBTC,BCCBTC').split(',')

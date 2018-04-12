@@ -64,7 +64,10 @@ class BitbankWelder:
 
             response = self.__context.requests_get('https://public.bitbank.cc/%s/ticker' % pair)
 
-            if response is None or response.get('success', 1) != 1:
+            if response is None:
+                return
+
+            if response.get('success', 1) != 1:
                 raise Exception(str(response))
 
             data = response.get('data', {})

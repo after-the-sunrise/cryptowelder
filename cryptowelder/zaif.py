@@ -111,8 +111,11 @@ class ZaifWelder:
 
             response = self._query_private('get_info2')
 
-            if response is None or response.get('success', 1) != 1:
+            if response is None:
                 return
+
+            if response.get('success', 1) != 1:
+                raise Exception(str(response))
 
             returns = response.get('return', {})
 
@@ -158,8 +161,11 @@ class ZaifWelder:
 
                 response = self._query_private('trade_history', parameters=params)
 
-                if response is None or response.get('success', 1) != 1:
+                if response is None:
                     break
+
+                if response.get('success', 1) != 1:
+                    raise Exception(str(response))
 
                 trades = response.get('return', {})
 

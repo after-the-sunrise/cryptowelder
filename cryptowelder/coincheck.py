@@ -168,6 +168,9 @@ class CoincheckWelder:
             if balances is None:
                 return
 
+            if not balances.get('success', True):
+                raise Exception(str(balances))
+
             values = []
 
             for key, val in balances.items():
@@ -205,6 +208,9 @@ class CoincheckWelder:
 
             if balances is None:
                 return
+
+            if not balances.get('success', True):
+                raise Exception(str(balances))
 
             values = []
 

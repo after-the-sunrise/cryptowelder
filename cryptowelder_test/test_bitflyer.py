@@ -157,8 +157,7 @@ class TestBitflyerWelder(TestCase):
         self.context.save_tickers.reset_mock()
         self.context.requests_get = MagicMock(return_value=None)
         self.target._process_ticker("FOO_BAR")
-        tickers = self.context.save_tickers.call_args[0][0]
-        self.assertEqual(0, len(tickers))
+        tickers = self.context.save_tickers.assert_not_called()
 
     def test__process_ticker_matured(self):
         self.target._fetch_special_quotation = MagicMock(return_value=Decimal('1.234'))
@@ -308,6 +307,14 @@ class TestBitflyerWelder(TestCase):
         self.target._query_private.reset_mock()
         self.target._process_position('BTC_JPY')
         self.target._query_private.assert_not_called()
+
+        # Query None
+        self.target._query_private.reset_mock()
+        self.target._query_private.side_effect = [None]
+        self.context.save_positions.reset_mock()
+        self.target._process_position("FX_BTC_JPY")
+        self.target._query_private.assert_called_once()
+        self.context.save_positions.assert_not_called()
 
         # Query Failure
         self.target._query_private.reset_mock()

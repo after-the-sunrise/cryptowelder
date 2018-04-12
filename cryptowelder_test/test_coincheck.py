@@ -147,6 +147,14 @@ class TestCoincheckWelder(TestCase):
         self.assertEqual('2009-02-13 23:31:30.123456 UTC', balances[1].bc_time.strftime(self.FORMAT))
         self.assertEqual(Decimal('11.25072654'), balances[1].bc_amnt)
 
+        # Query Reject
+        self.target._query_private.reset_mock()
+        self.target._query_private.return_value = {'success': False}
+        self.context.save_balances.reset_mock()
+        self.target._process_cash()
+        self.target._query_private.assert_called_once()
+        self.context.save_balances.assert_not_called()
+
         # Query Empty
         self.target._query_private.reset_mock()
         self.target._query_private.return_value = {}
@@ -198,6 +206,14 @@ class TestCoincheckWelder(TestCase):
         self.assertEqual('JPY', balances[0].bc_unit.name)
         self.assertEqual('2009-02-13 23:31:30.123456 UTC', balances[0].bc_time.strftime(self.FORMAT))
         self.assertEqual(Decimal('131767.22675655'), balances[0].bc_amnt)
+
+        # Query Reject
+        self.target._query_private.reset_mock()
+        self.target._query_private.return_value = {'success': False}
+        self.context.save_balances.reset_mock()
+        self.target._process_margin()
+        self.target._query_private.assert_called_once()
+        self.context.save_balances.assert_not_called()
 
         # Query Empty
         self.target._query_private.reset_mock()

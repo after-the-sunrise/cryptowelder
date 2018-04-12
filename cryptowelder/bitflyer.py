@@ -167,7 +167,9 @@ class BitflyerWelder:
             else:
 
                 json = self.__context.requests_get(self.__endpoint + '/v1/ticker?product_code=' + code)
-                json = json if json is not None else {}
+
+                if json is None:
+                    return
 
                 ticker.tk_time = self.__context.parse_iso_timestamp(json.get('timestamp'))
                 ticker.tk_ask = json.get('best_ask')
@@ -252,7 +254,10 @@ class BitflyerWelder:
 
             positions = self._query_private('/v1/me/getpositions?product_code=' + code)
 
-            for position in positions if positions is not None else []:
+            if positions is None:
+                return
+
+            for position in positions:
                 # Instrument Position
                 sign = self._SIDE.get(position.get('side'), self._ZERO)
                 inst = position.get('size', self._ZERO) * sign

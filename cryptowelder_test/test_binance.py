@@ -112,10 +112,10 @@ class TestPoloniexWelder(TestCase):
 
         # Query None
         self.context.requests_get.reset_mock()
-        self.context.requests_get.return_value = None
+        self.context.requests_get.side_effect = (None, None)
         self.context.save_tickers.reset_mock()
         self.target._process_ticker()
-        self.context.requests_get.assert_called_once()
+        self.context.requests_get.assert_called()
         self.context.save_tickers.assert_not_called()
 
         # Query Failure

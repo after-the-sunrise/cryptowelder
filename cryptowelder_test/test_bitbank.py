@@ -81,6 +81,14 @@ class TestBitbankWelder(TestCase):
         self.context.requests_get.assert_called_once()
         self.context.save_tickers.assert_not_called()
 
+        # Query Reject
+        self.context.requests_get.reset_mock()
+        self.context.requests_get.return_value = {'success', 0}
+        self.context.save_tickers.reset_mock()
+        self.target._process_ticker('btc_jpy')
+        self.context.requests_get.assert_called_once()
+        self.context.save_tickers.assert_not_called()
+
         # Query Empty
         self.context.requests_get.reset_mock()
         self.context.requests_get.return_value = {}
