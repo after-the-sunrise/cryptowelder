@@ -19,21 +19,29 @@ class MetricWelder:
     def __init__(self, context):
         self.__context = context
         self.__logger = context.get_logger(self)
-        self.__threads = [
+        self.__thread = Thread(daemon=False, target=self._execute)
+
+    def run(self):
+
+        self.__thread.start()
+
+    def _join(self):
+
+        self.__thread.join()
+
+    def _execute(self):
+
+        self.__logger.info('Processing : %s', self._ID)
+
+        threads = [
             Thread(target=self._wrap, args=(self.process_metric, 30)),
             Thread(target=self._wrap, args=(self.purge_metric, 3600)),
         ]
 
-    def run(self):
-
-        self.__logger.info('Processing : metric')
-
-        for t in self.__threads:
+        for t in threads:
             t.start()
 
-    def join(self):
-
-        for t in self.__threads:
+        for t in threads:
             t.join()
 
         self.__logger.info('Terminated.')
@@ -52,10 +60,9 @@ class MetricWelder:
 
             sleep(interval)
 
-    def process_metric(self):
-        self.process_metrics(self.__context.get_now())
+    def process_metric(self, *, base_time=None, default_count=3):
 
-    def process_metrics(self, base_time, *, default_count=3):
+        time = base_time if base_time is not None else self.__context.get_now()
 
         count = int(self.__context.get_property(self._ID, 'timestamp', default_count))
 
@@ -399,7 +406,7 @@ def main_historical():
         if timestamp >= datetime.now().astimezone(utc):
             break
 
-        target.process_metrics(timestamp, default_count=1)
+        target.process_metric(base_time=timestamp, default_count=1)
 
         timestamp = timestamp + timedelta(minutes=60)
 
