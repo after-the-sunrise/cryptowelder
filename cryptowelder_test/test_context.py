@@ -181,7 +181,14 @@ class TestCryptowelderContext(TestCase):
         self.assertEqual(result['flt'], Decimal('1.2'))
         self.assertEqual(result['flg'], True)
 
+        self.assertIsNone(self.target._parse(None))
+        self.assertIsNone(self.target._parse(''))
+
     def test__request(self):
+        TestHander.init()
+        result = self.target._request(lambda: get("http://localhost:65535"))
+        self.assertIsNone(result)
+
         TestHander.init(content='{"str":"foo", "int":123, "flt":1.2, "flg":true}')
         result = self.target._request(lambda: get("http://localhost:65535"))
         self.assertEqual(len(result), 4)
@@ -213,6 +220,16 @@ class TestCryptowelderContext(TestCase):
             self.assertEqual('502', str(e.args[0]))
             self.assertEqual('TEST-FAIL', str(e.args[1]))
             self.assertEqual('test server', str(e.args[2]))
+
+    def test__request_ConnectionError(self):
+        self.target.set_property(self.target._SECTION, 'request_retry', '3')
+        self.target.set_property(self.target._SECTION, 'request_sleep', '0.001')
+        TestHander.init()
+        try:
+            self.target._request(lambda: get("http://localhost:1"), label='test refuse')
+            self.fail('Error Expected : Refused')
+        except BaseException as e:
+            self.assertEqual('test refuse', str(e.args[0]))
 
     def test_requests_get(self):
         response = "{'foo': 'bar'}"

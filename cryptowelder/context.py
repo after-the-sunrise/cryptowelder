@@ -15,7 +15,7 @@ from time import sleep
 
 from prometheus_client import Gauge, start_http_server
 from pytz import utc
-from requests import get, post
+from requests import get, post, exceptions
 from sqlalchemy import create_engine, Column, String, DateTime, Numeric, Integer, Enum as Type, and_, or_, func, cast
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, scoped_session, aliased
@@ -104,7 +104,7 @@ class CryptowelderContext:
     def get_now(self):
         return datetime.now(tz=utc)
 
-    def get_nonce(self, key, *, delta=timedelta(milliseconds=5)):
+    def get_nonce(self, key, *, delta=timedelta(milliseconds=1)):
 
         while True:
 
@@ -158,11 +158,15 @@ class CryptowelderContext:
 
     @staticmethod
     def _parse(json):
+
+        if json is None or json == '':
+            return None
+
         return loads(json, parse_float=Decimal)
 
     def _request(self, method, *, label='N/A'):
 
-        attempt = int(self.get_property(self._SECTION, "request_retry", 1)) + 1
+        attempt = int(self.get_property(self._SECTION, "request_retry", 2)) + 1
 
         count = 0
 
@@ -170,17 +174,33 @@ class CryptowelderContext:
 
             count = count + 1
 
-            with method() as r:
+            try:
 
-                if r.ok:
-                    return self._parse(r.text)
+                with method() as r:
 
-                if r.status_code < 500 or count >= attempt:
-                    raise Exception(r.status_code, r.reason, label, r.text)
+                    if r.ok:
+                        return self._parse(r.text)
 
-                self.__logger.debug('[%s %s][%s/%s] %s ', r.status_code, r.reason, count, attempt, label)
+                    self.__logger.debug('[%s %s][%s/%s] %s', r.status_code, r.reason, count, attempt, label)
 
-            sleep(float(self.get_property(self._SECTION, "request_sleep", 1.0)))
+                    if r.status_code < 500 or count >= attempt:
+                        raise Exception(
+                            r.status_code,
+                            r.reason,
+                            label,
+                            r.text.replace('\r', '').replace('\n', '') if r.text is not None else ''
+                        )
+
+                sleep(float(self.get_property(self._SECTION, "request_sleep", 1.0)))
+
+            except exceptions.RequestException as e:
+
+                self.__logger.debug('[%s][%s/%s] %s', type(e).__name__, count, attempt, label)
+
+                if count < attempt:
+                    continue
+
+                raise Exception(label) from e
 
     def requests_get(self, url, params=None, **kwargs):
 
