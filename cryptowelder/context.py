@@ -195,8 +195,7 @@ class CryptowelderContext:
 
                 self.__logger.debug('[%s][%s/%s] %s', type(e).__name__, count, attempt, label)
 
-                if count >= attempt:
-                    raise Exception(label) from e
+                raise Exception(label) from e
 
             sleep(float(self.get_property(self._SECTION, "request_sleep", 3.0)))
 
