@@ -303,9 +303,12 @@ class BitflyerWelder:
 
                 executions = self._query_private(path)
 
+                if executions is None:
+                    break
+
                 values = []
 
-                for execution in executions if executions is not None else []:
+                for execution in executions:
                     exec_id = execution.get('id')  # Self-cross has same ids.
                     exec_od = execution.get('child_order_id')
                     exec_ts = execution.get('exec_date')
@@ -354,9 +357,12 @@ class BitflyerWelder:
 
             balances = self._query_private(path)
 
+            if balances is None:
+                return
+
             values = []
 
-            for balance in balances if balances is not None else []:
+            for balance in balances:
 
                 ccy = balance.get('currency_code')
 

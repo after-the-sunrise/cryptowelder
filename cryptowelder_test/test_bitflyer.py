@@ -349,7 +349,7 @@ class TestBitflyerWelder(TestCase):
                 "child_order_acceptance_id": "JRF20150707-060559-396699"
               }
             ]
-        """), None])
+        """), []])
 
         self.target._process_transaction('FOO_BAR')
         self.target._query_private.assert_has_calls([
@@ -386,9 +386,15 @@ class TestBitflyerWelder(TestCase):
         transactions = calls[1][0][0]
         self.assertEqual(0, len(transactions))
 
+        # Query None
+        self.target._query_private = MagicMock(return_value=None)
+        self.context.save_transactions.reset_mock()
+        self.target._process_transaction("FOO_BAR")
+        self.target._query_private.assert_called_once()
+        self.context.save_transactions.assert_not_called()
+
         # Query Failure
-        self.target._query_private.reset_mock()
-        self.target._query_private.side_effect = Exception('test')
+        self.target._query_private = MagicMock(side_effect=Exception('test'))
         self.context.save_transactions.reset_mock()
         self.target._process_transaction("FOO_BAR")
         self.target._query_private.assert_called_once()
