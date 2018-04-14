@@ -198,7 +198,7 @@ class CryptowelderContext:
                 if count >= attempt:
                     raise Exception(label) from e
 
-            sleep(float(self.get_property(self._SECTION, "request_sleep", 1.0)))
+            sleep(float(self.get_property(self._SECTION, "request_sleep", 3.0)))
 
     def requests_get(self, url, params=None, **kwargs):
 
