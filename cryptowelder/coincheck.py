@@ -120,17 +120,23 @@ class CoincheckWelder:
 
                     result = self._query_private('/api/exchange/orders/transactions');
 
-                    executions = result.get('transactions', []) if result is not None else []
+                    key = 'transactions'
 
                 else:
 
                     result = self._query_private('/api/exchange/orders/transactions_pagination?' + urlencode(page))
 
-                    executions = result.get('data', []) if result is not None else []
+                    key = 'data'
+
+                if result is None:
+                    break
+
+                if not result.get('success', True):
+                    raise Exception(str(result))
 
                 values = []
 
-                for execution in executions:
+                for execution in result.get(key, []):
                     page[pk] = execution['id'] if pk not in page else min(execution['id'], page[pk])
 
                     value = Transaction()

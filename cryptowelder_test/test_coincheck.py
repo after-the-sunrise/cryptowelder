@@ -6,7 +6,7 @@ from unittest.mock import MagicMock
 from pytz import utc
 
 from cryptowelder.coincheck import CoincheckWelder
-from cryptowelder.context import CryptowelderContext
+from cryptowelder.context import CryptowelderContext, TransactionType, AccountType
 
 
 class TestCoincheckWelder(TestCase):
@@ -187,6 +187,7 @@ class TestCoincheckWelder(TestCase):
             {
               "success": true,
               "margin": {
+                "foo": "123456.78901234",
                 "jpy": "131767.22675655"
               },
               "margin_available": {
@@ -240,7 +241,182 @@ class TestCoincheckWelder(TestCase):
         self.context.save_balances.assert_not_called()
 
     def test__process_transaction(self):
-        pass  # TODO
+        side_effects = [CryptowelderContext._parse("""
+            {
+              "success": true,
+              "transactions": [
+                {
+                  "id": 38,
+                  "order_id": 49,
+                  "created_at": "2015-11-18T07:02:21.000Z",
+                  "funds": {
+                    "btc": "0.1",
+                    "jpy": "-4096.135"
+                  },
+                  "pair": "btc_jpy",
+                  "rate": "40900.0",
+                  "fee_currency": "JPY",
+                  "fee": "6.135",
+                  "liquidity": "T",
+                  "side": "buy"
+                },
+                {
+                  "id": 37,
+                  "order_id": 48,
+                  "created_at": "2015-11-18T07:02:21.000Z",
+                  "funds": {
+                    "btc": "-0.1",
+                    "jpy": "4094.09"
+                  },
+                  "pair": "btc_jpy",
+                  "rate": "40900.0",
+                  "fee_currency": "JPY",
+                  "fee": "-4.09",
+                  "liquidity": "M",
+                  "side": "sell"
+                }
+              ]
+            }
+        """), CryptowelderContext._parse("""
+          {
+          "success": true,
+          "pagination": {
+            "limit": 1,
+            "order": "desc",
+            "starting_after": null,
+            "ending_before": null
+          },
+          "data": [
+            {
+              "id": 36,
+              "order_id": 49,
+              "created_at": "2015-11-18T07:02:21.000Z",
+              "funds": {
+                "btc": "0.1",
+                "jpy": "-4096.135"
+              },
+              "pair": "btc_jpy",
+              "rate": "40900.0",
+              "fee_currency": "JPY",
+              "fee": "6.135",
+              "liquidity": "T",
+              "side": "buy"
+            },
+            {
+              "id": 35,
+              "order_id": 48,
+              "created_at": "2015-11-18T07:02:21.000Z",
+              "funds": {
+                "btc": "-0.1",
+                "jpy": "4094.09"
+              },
+              "pair": "btc_jpy",
+              "rate": "40900.0",
+              "fee_currency": "JPY",
+              "fee": "-4.09",
+              "liquidity": "M",
+              "side": "sell"
+            }
+          ]
+        }
+        """), None]
+
+        # Query 3 times
+        self.target._query_private = MagicMock(side_effect=side_effects)
+        self.context.save_transactions = MagicMock(side_effect=([None], []))
+        self.target._process_transaction()
+        self.target._query_private.assert_called()
+        self.context.save_transactions.assert_called()
+
+        calls = self.context.save_transactions.call_args_list
+        self.assertEqual(2, len(calls))
+
+        values = list(calls[0][0][0])
+        self.assertEqual(2, len(values))
+
+        value = values[0]
+        self.assertEqual('coincheck', value.tx_site)
+        self.assertEqual('btc_jpy', value.tx_code)
+        self.assertEqual(TransactionType.TRADE, value.tx_type)
+        self.assertEqual(AccountType.CASH, value.tx_acct)
+        self.assertEqual('49', value.tx_oid)
+        self.assertEqual('38', value.tx_eid)
+        self.assertEqual('2015-11-18 07:02:21.000000 UTC', value.tx_time.strftime(self.FORMAT))
+        self.assertEqual('0.1', value.tx_inst)
+        self.assertEqual('-4096.135', value.tx_fund)
+
+        value = values[1]
+        self.assertEqual('coincheck', value.tx_site)
+        self.assertEqual('btc_jpy', value.tx_code)
+        self.assertEqual(TransactionType.TRADE, value.tx_type)
+        self.assertEqual(AccountType.CASH, value.tx_acct)
+        self.assertEqual('48', value.tx_oid)
+        self.assertEqual('37', value.tx_eid)
+        self.assertEqual('2015-11-18 07:02:21.000000 UTC', value.tx_time.strftime(self.FORMAT))
+        self.assertEqual('-0.1', value.tx_inst)
+        self.assertEqual('4094.09', value.tx_fund)
+
+        values = list(calls[1][0][0])
+        self.assertEqual(2, len(values))
+
+        value = values[0]
+        self.assertEqual('coincheck', value.tx_site)
+        self.assertEqual('btc_jpy', value.tx_code)
+        self.assertEqual(TransactionType.TRADE, value.tx_type)
+        self.assertEqual(AccountType.CASH, value.tx_acct)
+        self.assertEqual('49', value.tx_oid)
+        self.assertEqual('36', value.tx_eid)
+        self.assertEqual('2015-11-18 07:02:21.000000 UTC', value.tx_time.strftime(self.FORMAT))
+        self.assertEqual('0.1', value.tx_inst)
+        self.assertEqual('-4096.135', value.tx_fund)
+
+        value = values[1]
+        self.assertEqual('coincheck', value.tx_site)
+        self.assertEqual('btc_jpy', value.tx_code)
+        self.assertEqual(TransactionType.TRADE, value.tx_type)
+        self.assertEqual(AccountType.CASH, value.tx_acct)
+        self.assertEqual('48', value.tx_oid)
+        self.assertEqual('35', value.tx_eid)
+        self.assertEqual('2015-11-18 07:02:21.000000 UTC', value.tx_time.strftime(self.FORMAT))
+        self.assertEqual('-0.1', value.tx_inst)
+        self.assertEqual('4094.09', value.tx_fund)
+
+        # Empty Trades
+        self.target._query_private = MagicMock(return_value={"success": True})
+        self.context.save_transactions = MagicMock(side_effect=[[None], None])
+        self.target._process_transaction()
+        self.target._query_private.assert_called()
+        self.context.save_transactions.assert_called()
+        self.assertEqual(2, len(self.context.save_transactions.call_args_list))
+        self.assertEqual(0, len(self.context.save_transactions.call_args_list[0][0][0]))
+        self.assertEqual(0, len(self.context.save_transactions.call_args_list[1][0][0]))
+
+        # Failure Response
+        self.target._query_private = MagicMock(return_value=CryptowelderContext._parse("""
+            {
+                "success": 0,
+                "return": {
+                }
+            }
+        """))
+        self.context.save_transactions = MagicMock(return_value=[None])
+        self.target._process_transaction()
+        self.target._query_private.assert_called_once()
+        self.context.save_transactions.assert_not_called()
+
+        # No Response
+        self.target._query_private = MagicMock(return_value=None)
+        self.context.save_transactions = MagicMock(return_value=[None])
+        self.target._process_transaction()
+        self.target._query_private.assert_called_once()
+        self.context.save_transactions.assert_not_called()
+
+        # Exception Response
+        self.target._query_private = MagicMock(side_effect=Exception('test'))
+        self.context.save_transactions = MagicMock(return_value=[None])
+        self.target._process_transaction()
+        self.target._query_private.assert_called_once()
+        self.context.save_transactions.assert_not_called()
 
 
 if __name__ == '__main__':
