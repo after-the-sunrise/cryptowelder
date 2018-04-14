@@ -164,39 +164,23 @@ class CryptowelderContext:
 
         attempt = int(self.get_property(self._SECTION, "request_retry", 1)) + 1
 
-        result = None
+        count = 0
 
-        for i in range(attempt):
+        while True:
 
-            try:
+            count = count + 1
 
-                with method() as r:
+            with method() as r:
 
-                    if r.status_code >= 500:  # Server Error
+                if r.ok:
+                    return self._parse(r.text)
 
-                        raise Exception(r.status_code, r.reason, label, r.text)
+                if r.status_code < 500 or count >= attempt:
+                    raise Exception(r.status_code, r.reason, label, r.text)
 
-                    if r.ok:
+                self.__logger.debug('[%s %s][%s/%s] %s ', r.status_code, r.reason, count, attempt, label)
 
-                        result = self._parse(r.text)
-
-                    else:
-
-                        self.__logger.error('[%s:%s] %s - %s', r.status_code, r.reason, label, r.text)
-
-                    break
-
-            except BaseException as e:
-
-                self.__logger.debug('%s : %s', type(e), e.args)
-
-                sleep(float(self.get_property(self._SECTION, "request_sleep", 1.0)))
-
-        else:
-
-            self.__logger.error('Request retry exceeded : %s', label)
-
-        return result
+            sleep(float(self.get_property(self._SECTION, "request_sleep", 1.0)))
 
     def requests_get(self, url, params=None, **kwargs):
 

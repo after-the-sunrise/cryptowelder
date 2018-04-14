@@ -194,15 +194,25 @@ class TestCryptowelderContext(TestCase):
         self.target.set_property(self.target._SECTION, 'request_retry', '3')
         self.target.set_property(self.target._SECTION, 'request_sleep', '0.001')
         TestHander.init(status=404)
-        result = self.target._request(lambda: get("http://localhost:65535"), label='test client')
-        self.assertIsNone(result)
+        try:
+            self.target._request(lambda: get("http://localhost:65535"), label='test client')
+            self.fail('Error Expected : 4xx')
+        except BaseException as e:
+            self.assertEqual('404', str(e.args[0]))
+            self.assertEqual('TEST-FAIL', str(e.args[1]))
+            self.assertEqual('test client', str(e.args[2]))
 
     def test__request_ServerError(self):
         self.target.set_property(self.target._SECTION, 'request_retry', '3')
         self.target.set_property(self.target._SECTION, 'request_sleep', '0.001')
         TestHander.init(status=502)
-        result = self.target._request(lambda: get("http://localhost:65535"), label='test server')
-        self.assertIsNone(result)
+        try:
+            self.target._request(lambda: get("http://localhost:65535"), label='test server')
+            self.fail('Error Expected : 5xx')
+        except BaseException as e:
+            self.assertEqual('502', str(e.args[0]))
+            self.assertEqual('TEST-FAIL', str(e.args[1]))
+            self.assertEqual('test server', str(e.args[2]))
 
     def test_requests_get(self):
         response = "{'foo': 'bar'}"
