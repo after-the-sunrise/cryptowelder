@@ -87,11 +87,9 @@ class BtcboxWelder:
             return None
 
         with self.__lock:
-            sleep(0.005)  # Avoid duplicate nonce
-
             copied = dict(parameters)
             copied['key'] = apikey
-            copied['nonce'] = str(int(self.__context.get_now().timestamp() * 1000))
+            copied['nonce'] = str(int(self.__context.get_nonce(self._ID).timestamp() * 1000))
 
             data = ''
 

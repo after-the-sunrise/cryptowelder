@@ -123,9 +123,7 @@ class BitmexWelder:
             return None
 
         with self.__lock:
-            sleep(0.005)  # Avoid duplicate nonce
-
-            timestamp = str(int(self.__context.get_now().timestamp() * 1000))
+            timestamp = str(int(self.__context.get_nonce(self._ID).timestamp() * 1000))
 
             data = 'GET' + path + timestamp
 

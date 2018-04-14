@@ -81,7 +81,7 @@ class TestBtcboxWelder(TestCase):
 
     def test__query_private(self):
         now = datetime.fromtimestamp(1234567890.123456, utc)
-        self.context.get_now = MagicMock(return_value=now)
+        self.context.get_nonce = MagicMock(return_value=now)
         self.context.requests_post = MagicMock(return_value='json')
 
         # With Parameter

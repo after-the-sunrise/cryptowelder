@@ -226,7 +226,7 @@ class BitflyerWelder:
         if apikey is None or secret is None:
             return None
 
-        timestamp = str(int(self.__context.get_now().timestamp() * 1000))
+        timestamp = str(int(self.__context.get_nonce(self._ID).timestamp() * 1000))
 
         data = timestamp + "GET" + path
 

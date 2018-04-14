@@ -87,9 +87,7 @@ class ZaifWelder:
             return None
 
         with self.__lock:
-            sleep(0.005)  # Avoid duplicate nonce
-
-            time = self.__context.get_now().timestamp()
+            time = self.__context.get_nonce(self._ID).timestamp()
 
             data = 'nonce=%.3f&method=%s' % (time, path)
 

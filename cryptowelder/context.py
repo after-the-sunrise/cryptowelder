@@ -104,7 +104,7 @@ class CryptowelderContext:
     def get_now(self):
         return datetime.now(tz=utc)
 
-    def get_nonce(self, key, *, delta=timedelta(milliseconds=1)):
+    def get_nonce(self, key, *, delta=timedelta(milliseconds=5)):
 
         while True:
 

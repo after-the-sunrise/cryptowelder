@@ -123,11 +123,9 @@ class QuoinexWelder:
             return None
 
         with self.__lock:
-            sleep(0.005)  # Avoid duplicate nonce
-
             payload = {
                 "path": path,
-                "nonce": str(int(self.__context.get_now().timestamp() * 1000)),
+                "nonce": str(int(self.__context.get_nonce(self._ID).timestamp() * 1000)),
                 "token_id": apikey
             }
 

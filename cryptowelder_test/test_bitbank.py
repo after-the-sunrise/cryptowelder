@@ -115,7 +115,7 @@ class TestBitbankWelder(TestCase):
 
     def test__query_private(self):
         now = datetime.fromtimestamp(1234567890.123456, utc)
-        self.context.get_now = MagicMock(return_value=now)
+        self.context.get_nonce = MagicMock(return_value=now)
         self.context.requests_get = MagicMock(return_value='json')
 
         self.context.get_property = MagicMock(side_effect=['foo', 'bar'])
