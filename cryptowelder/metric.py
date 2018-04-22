@@ -85,7 +85,89 @@ class MetricWelder:
         for t in threads:
             t.join()
 
-    def calculate_evaluation(self, evaluation, prices):
+    def process_ticker(self, timestamp):
+
+        prices = None
+
+        try:
+
+            values = self.__context.fetch_tickers(timestamp, include_expired=True)
+
+            prices = self._calculate_prices(values)
+
+            metrics = []
+
+            for dto in values if values is not None else []:
+
+                metric = self._convert_ticker(timestamp, prices, dto)
+
+                if metric is None:
+                    continue
+
+                metrics.append(metric)
+
+            self.__context.save_metrics(metrics)
+
+        except BaseException as e:
+
+            self.__logger.warn('Ticker : %s : %s', type(e), e.args)
+
+        return prices
+
+    def _calculate_prices(self, tickers):
+
+        prices = defaultdict(lambda: dict())
+
+        for dto in tickers if tickers is not None else []:
+            ticker = dto.ticker
+            ask = ticker.tk_ask if ticker.tk_ask != self._ZERO else None
+            bid = ticker.tk_bid if ticker.tk_bid != self._ZERO else None
+            ltp = ticker.tk_ltp if ticker.tk_ltp != self._ZERO else None
+
+            candidates = [p for p in (ask, bid, ltp) if p is not None]
+
+            if len(candidates) >= 2:
+                price = (candidates[0] + candidates[1]) * self._HALF
+            else:
+                price = candidates[0] if len(candidates) > 0 else None
+
+            prices[ticker.tk_site][ticker.tk_code] = price
+
+        return prices
+
+    def _convert_ticker(self, timestamp, prices, dto):
+
+        threshold_minutes = self.__context.get_property(self._ID, 'ticker_threshold', 3)
+
+        threshold_cutoff = timestamp - timedelta(minutes=int(threshold_minutes))
+
+        if dto.ticker.tk_time.replace(tzinfo=threshold_cutoff.tzinfo) < threshold_cutoff:
+            return None
+
+        price = prices.get(dto.ticker.tk_site, {}).get(dto.ticker.tk_code)
+
+        if price is None or price == self._ZERO or dto.product is None:
+            return None
+
+        expiry = dto.product.pr_expr
+
+        if expiry is not None and expiry.astimezone(timestamp.tzinfo) < timestamp:
+            return None
+
+        rate = self._calculate_evaluation(dto.fund, prices)
+
+        if rate is None:
+            return None
+
+        metric = Metric()
+        metric.mc_type = 'ticker'
+        metric.mc_name = dto.product.pr_disp
+        metric.mc_time = timestamp
+        metric.mc_amnt = price * rate
+
+        return metric
+
+    def _calculate_evaluation(self, evaluation, prices):
 
         if evaluation is None:
             return None
@@ -116,80 +198,6 @@ class MetricWelder:
 
         return price
 
-    def process_ticker(self, timestamp):
-
-        prices = None
-
-        try:
-
-            values = self.__context.fetch_tickers(timestamp, include_expired=True)
-
-            prices = defaultdict(lambda: dict())
-
-            for dto in values if values is not None else []:
-
-                ticker = dto.ticker
-                ask = ticker.tk_ask if ticker.tk_ask != self._ZERO else None
-                bid = ticker.tk_bid if ticker.tk_bid != self._ZERO else None
-                ltp = ticker.tk_ltp if ticker.tk_ltp != self._ZERO else None
-
-                price = None
-
-                if ask is not None and bid is not None:
-                    price = (ask + bid) * self._HALF
-
-                if price is None:
-                    price = ask
-
-                if price is None:
-                    price = bid
-
-                if price is None:
-                    price = ltp
-
-                prices[ticker.tk_site][ticker.tk_code] = price
-
-            metrics = []
-
-            threshold_minutes = self.__context.get_property(self._ID, 'ticker_threshold', 3)
-
-            threshold_cutoff = timestamp - timedelta(minutes=int(threshold_minutes))
-
-            for dto in values if values is not None else []:
-
-                if dto.ticker.tk_time.replace(tzinfo=threshold_cutoff.tzinfo) < threshold_cutoff:
-                    continue
-
-                price = prices[dto.ticker.tk_site][dto.ticker.tk_code]
-
-                if price is None or price == self._ZERO or dto.product is None:
-                    continue
-
-                expiry = dto.product.pr_expr
-
-                if expiry is not None and expiry.astimezone(timestamp.tzinfo) < timestamp:
-                    continue
-
-                rate = self.calculate_evaluation(dto.fund, prices)
-
-                if rate is None:
-                    continue
-
-                metric = Metric()
-                metric.mc_type = 'ticker'
-                metric.mc_name = dto.product.pr_disp
-                metric.mc_time = timestamp
-                metric.mc_amnt = price * rate
-                metrics.append(metric)
-
-            self.__context.save_metrics(metrics)
-
-        except BaseException as e:
-
-            self.__logger.warn('Ticker : %s : %s', type(e), e.args)
-
-        return prices
-
     def process_balance(self, timestamp, prices):
 
         try:
@@ -202,7 +210,7 @@ class MetricWelder:
 
                 amount = dto.balance.bc_amnt
 
-                rate = self.calculate_evaluation(dto.evaluation, prices)
+                rate = self._calculate_evaluation(dto.evaluation, prices)
 
                 if dto.account is None or amount is None or rate is None:
                     continue
@@ -232,7 +240,7 @@ class MetricWelder:
 
                 amount = dto.position.ps_fund
 
-                rate = self.calculate_evaluation(dto.fund, prices)
+                rate = self._calculate_evaluation(dto.fund, prices)
 
                 if dto.product is None or amount is None or rate is None:
                     continue
@@ -248,7 +256,7 @@ class MetricWelder:
 
                 amount = dto.position.ps_inst
 
-                rate = self.calculate_evaluation(dto.inst, prices)
+                rate = self._calculate_evaluation(dto.inst, prices)
 
                 if dto.product is None or amount is None or rate is None:
                     continue
@@ -291,8 +299,8 @@ class MetricWelder:
                     inst_qty = dto.tx_net_inst
                     fund_qty = dto.tx_net_fund
 
-                    inst_rate = self.calculate_evaluation(dto.ev_inst, prices)
-                    fund_rate = self.calculate_evaluation(dto.ev_fund, prices)
+                    inst_rate = self._calculate_evaluation(dto.ev_inst, prices)
+                    fund_rate = self._calculate_evaluation(dto.ev_fund, prices)
 
                     if dto.product is None \
                             or inst_qty is None or fund_qty is None \
@@ -332,7 +340,7 @@ class MetricWelder:
 
                     amount = dto.tx_grs_fund
 
-                    rate = self.calculate_evaluation(dto.ev_fund, prices)
+                    rate = self._calculate_evaluation(dto.ev_fund, prices)
 
                     if dto.product is None or amount is None or rate is None:
                         continue

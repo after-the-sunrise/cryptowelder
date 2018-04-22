@@ -600,7 +600,7 @@ class CryptowelderContext:
 
             count = session.query(Metric).filter(*filters).delete(synchronize_session='fetch')
 
-            if count > 0:
+            if count > 0 and not self._is_read_only():
                 session.commit()
 
         except BaseException as e:

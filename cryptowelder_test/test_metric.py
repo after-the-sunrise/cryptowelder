@@ -1,11 +1,14 @@
+from collections import namedtuple
+from datetime import datetime, timedelta
+from decimal import Decimal
 from unittest import TestCase, main
 from unittest.mock import MagicMock
 
-from cryptowelder.context import CryptowelderContext
+from cryptowelder.context import CryptowelderContext, Ticker
 from cryptowelder.metric import MetricWelder
 
 
-class TestPoloniexWelder(TestCase):
+class TestMetricWelder(TestCase):
     FORMAT = '%Y-%m-%d %H:%M:%S.%f %Z'
 
     def setUp(self):
@@ -39,6 +42,86 @@ class TestPoloniexWelder(TestCase):
         self.target._wrap(method, 0.1)
 
         self.assertEqual(3, len(method.call_args_list))
+
+    def test__process_metric(self):
+        now = datetime.fromtimestamp(1234567890.123456)
+        t0 = now.replace(second=0, microsecond=0)
+        t1 = t0 - timedelta(minutes=1)
+        t2 = t0 - timedelta(minutes=2)
+        prices = {'foo': {'bar': 'hoge'}}
+        self.context.get_now = MagicMock(return_value=now)
+        self.target.process_ticker = MagicMock(return_value=prices)
+        self.target.process_balance = MagicMock()
+        self.target.process_position = MagicMock()
+        self.target.process_transaction_trade = MagicMock()
+        self.target.process_transaction_volume = MagicMock()
+
+        self.target.process_metric()
+
+        self.assertEqual(3, len(self.target.process_ticker.call_args_list))
+        self.assertEqual(3, len(self.target.process_balance.call_args_list))
+        self.assertEqual(3, len(self.target.process_position.call_args_list))
+        self.assertEqual(3, len(self.target.process_transaction_trade.call_args_list))
+        self.assertEqual(3, len(self.target.process_transaction_volume.call_args_list))
+
+        for i, t in enumerate((t0, t1, t2)):
+            self.assertEqual(t, self.target.process_ticker.call_args_list[i][0][0])
+
+            self.assertEqual(t, self.target.process_balance.call_args_list[i][0][0])
+            self.assertEqual(prices, self.target.process_balance.call_args_list[i][0][1])
+
+            self.assertEqual(t, self.target.process_position.call_args_list[i][0][0])
+            self.assertEqual(prices, self.target.process_position.call_args_list[i][0][1])
+
+            self.assertEqual(t, self.target.process_transaction_trade.call_args_list[i][0][0])
+            self.assertEqual(prices, self.target.process_transaction_trade.call_args_list[i][0][1])
+
+            self.assertEqual(t, self.target.process_transaction_volume.call_args_list[i][0][0])
+            self.assertEqual(prices, self.target.process_transaction_volume.call_args_list[i][0][1])
+
+    def test__calculate_prices(self):
+        t1 = Ticker()
+        t1.tk_site = 's1'
+        t1.tk_code = 'c1'
+        t1.tk_ask = Decimal('1.5')
+        t1.tk_bid = Decimal('1.1')
+        t1.tk_ltp = Decimal('1.2')
+
+        t2 = Ticker()
+        t2.tk_site = 's1'
+        t2.tk_code = 'c2'
+        t2.tk_ask = None
+        t2.tk_bid = Decimal('1.1')
+        t2.tk_ltp = Decimal('1.2')
+
+        t3 = Ticker()
+        t3.tk_site = 's2'
+        t3.tk_code = 'c1'
+        t3.tk_ask = Decimal('1.5')
+        t3.tk_bid = Decimal(0)
+        t3.tk_ltp = Decimal('1.2')
+
+        t4 = Ticker()
+        t4.tk_site = 's3'
+        t4.tk_code = 'c3'
+        t4.tk_ask = Decimal('0.0')
+        t4.tk_bid = None
+        t4.tk_ltp = Decimal('1.2')
+
+        t5 = Ticker()
+        t5.tk_site = 's4'
+        t5.tk_code = 'c4'
+        t5.tk_ask = None
+        t5.tk_bid = None
+        t5.tk_ltp = Decimal('0.0')
+
+        dto = namedtuple('TickerDto', ('ticker',))
+        prices = self.target._calculate_prices((dto(t1), dto(t2), dto(t3), dto(t4), dto(t5)))
+        self.assertEqual(Decimal('1.3'), prices['s1']['c1'])
+        self.assertEqual(Decimal('1.15'), prices['s1']['c2'])
+        self.assertEqual(Decimal('1.35'), prices['s2']['c1'])
+        self.assertEqual(Decimal('1.2'), prices['s3']['c3'])
+        self.assertIsNone(prices['s4']['c4'])
 
 
 if __name__ == '__main__':
