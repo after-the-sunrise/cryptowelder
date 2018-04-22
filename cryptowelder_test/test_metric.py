@@ -1,10 +1,10 @@
-from collections import namedtuple
+from collections import namedtuple, defaultdict
 from datetime import datetime, timedelta
 from decimal import Decimal
 from unittest import TestCase, main
 from unittest.mock import MagicMock
 
-from cryptowelder.context import CryptowelderContext, Ticker
+from cryptowelder.context import CryptowelderContext, Ticker, Metric
 from cryptowelder.metric import MetricWelder
 
 
@@ -78,6 +78,31 @@ class TestMetricWelder(TestCase):
 
             self.assertEqual(t, self.target.process_transaction_volume.call_args_list[i][0][0])
             self.assertEqual(prices, self.target.process_transaction_volume.call_args_list[i][0][1])
+
+    def test_process_ticker(self):
+        now = datetime.fromtimestamp(1234567890.123456)
+
+        dto = namedtuple('TickerDto', ('ticker',))
+        tickers = [dto(1), dto(2), dto(3)]
+        self.context.fetch_tickers = MagicMock(return_value=tickers)
+
+        prices = defaultdict(lambda: {})
+        self.target._calculate_prices = MagicMock(return_value=prices)
+
+        metrics = [Metric(), None, Metric()]
+        self.target._convert_ticker = MagicMock(side_effect=metrics)
+
+        self.context.save_metrics = MagicMock()
+        result = self.target.process_ticker(now)
+        self.assertEqual(prices, result)
+        self.context.save_metrics.assert_called_once()
+
+        self.assertEqual(2, len(self.context.save_metrics.call_args[0][0]))
+        self.assertEqual(metrics[0], self.context.save_metrics.call_args[0][0][0])
+        self.assertEqual(metrics[2], self.context.save_metrics.call_args[0][0][1])
+
+        self.context.fetch_tickers = MagicMock(side_effect=Exception('test'))
+        self.assertIsNone(self.target.process_ticker(now))
 
     def test__calculate_prices(self):
         t1 = Ticker()
