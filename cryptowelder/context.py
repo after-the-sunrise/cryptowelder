@@ -588,20 +588,28 @@ class CryptowelderContext:
 
         try:
 
-            filters = [Metric.mc_time < cutoff_time]
+            if self._is_read_only():
 
-            if exclude_minutes is not None and len(exclude_minutes) > 0:
-                filters.append(
-                    cast(
-                        func.extract('minute', Metric.mc_time),
-                        Integer
-                    ).notin_(exclude_minutes)
-                )
+                self.__logger.debug("Skipping delete : cutoff=[%s], exclude=[%s]", cutoff_time, str(exclude_minutes))
 
-            count = session.query(Metric).filter(*filters).delete(synchronize_session='fetch')
+                count = 0
 
-            if count > 0 and not self._is_read_only():
-                session.commit()
+            else:
+
+                filters = [Metric.mc_time < cutoff_time]
+
+                if exclude_minutes is not None and len(exclude_minutes) > 0:
+                    filters.append(
+                        cast(
+                            func.extract('minute', Metric.mc_time),
+                            Integer
+                        ).notin_(exclude_minutes)
+                    )
+
+                count = session.query(Metric).filter(*filters).delete(synchronize_session='fetch')
+
+                if count > 0:
+                    session.commit()
 
         except BaseException as e:
 

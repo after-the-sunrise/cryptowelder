@@ -682,6 +682,16 @@ class TestCryptowelderContext(TestCase):
 
         load_records()
 
+        self.target._is_read_only = MagicMock(return_value=True)
+
+        count = self.target.delete_metrics(base.replace(minute=4), exclude_minutes=[1, 2, 3])
+        self.assertEqual(count, 0)
+
+        count = self.target.delete_metrics(base.replace(minute=4), exclude_minutes=[1])
+        self.assertEqual(count, 0)
+
+        self.target._is_read_only = MagicMock(return_value=False)
+
         count = self.target.delete_metrics(base.replace(minute=4), exclude_minutes=[1, 2, 3])
         self.assertEqual(count, 0)
 
