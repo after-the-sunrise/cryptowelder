@@ -167,13 +167,13 @@ class TestZaifWelder(TestCase):
         self.assertEqual('CASH', balances[0].bc_acct.name)
         self.assertEqual('JPY', balances[0].bc_unit.name)
         self.assertEqual('2014-06-05 06:47:13.000000 UTC', balances[0].bc_time.strftime(self.FORMAT))
-        self.assertEqual(Decimal('15320'), balances[0].bc_amnt)
+        self.assertEqual(Decimal('20440'), balances[0].bc_amnt)
 
         self.assertEqual('zaif', balances[1].bc_site)
         self.assertEqual('CASH', balances[1].bc_acct.name)
         self.assertEqual('BTC', balances[1].bc_unit.name)
         self.assertEqual('2014-06-05 06:47:13.000000 UTC', balances[1].bc_time.strftime(self.FORMAT))
-        self.assertEqual(Decimal('1.389'), balances[1].bc_amnt)
+        self.assertEqual(Decimal('1.479'), balances[1].bc_amnt)
 
         # Query Reject
         self.target._query_private.reset_mock()

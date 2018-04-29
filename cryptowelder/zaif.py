@@ -121,7 +121,7 @@ class ZaifWelder:
 
             values = []
 
-            for currency, amount in returns.get('funds', {}).items():
+            for currency, amount in returns.get('deposit', {}).items():
 
                 try:
                     unit = UnitType[currency.upper()]
