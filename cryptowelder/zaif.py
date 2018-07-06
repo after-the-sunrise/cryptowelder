@@ -178,6 +178,9 @@ class ZaifWelder:
                     side = t.get('your_action')  # 'ask' -> sell, 'bid' -> buy, 'both' -> cross
                     side = +1 if side == 'ask' else -1 if side == 'bid' else 0
 
+                    bonus = t.get('bonus');
+                    bonus = 0 if bonus is None else bonus
+
                     values[i] = Transaction()
                     values[i].tx_site = self._ID
                     values[i].tx_code = code
@@ -187,7 +190,7 @@ class ZaifWelder:
                     values[i].tx_eid = str(i)
                     values[i].tx_time = self.__context.parse_iso_timestamp(t.get('timestamp'))
                     values[i].tx_inst = -side * t.get('amount')
-                    values[i].tx_fund = +side * t.get('amount') * t.get('price') - t.get('fee') + t.get('bonus')
+                    values[i].tx_fund = +side * t.get('amount') * t.get('price') - t.get('fee') + bonus
 
                 self.__logger.debug('Transactions : %s - fetched=[%s] id=[%s]', code, len(values), params['end_id'])
 
