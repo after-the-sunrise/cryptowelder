@@ -12,6 +12,7 @@ def main():
     cryptowelder.BitfinexWelder(context).run()
     cryptowelder.BitflyerWelder(context).run()
     cryptowelder.BitmexWelder(context).run()
+    cryptowelder.BitpointWelder(context).run()
     cryptowelder.BtcboxWelder(context).run()
     cryptowelder.CoincheckWelder(context).run()
     cryptowelder.OandaWelder(context).run()
