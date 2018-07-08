@@ -41,6 +41,7 @@ VALUES
   ('bitflyer', 'BCH', 'bitflyer', 'BCH_BTC', 'bitflyer', 'BTC_JPY'),
   ('bitmex', 'USD', 'oanda', 'USD_JPY', NULL, NULL),
   ('bitmex', 'BTC', 'bitflyer', 'BTC_JPY', NULL, NULL),
+  ('bitpoint', 'JPY', NULL, NULL, NULL, NULL),
   ('bitpoint', 'BTC', 'bitpoint', 'BTC_JPY', NULL, NULL),
   ('btcbox', 'JPY', NULL, NULL, NULL, NULL),
   ('btcbox', 'BTC', 'btcbox', 'btc', NULL, NULL),
