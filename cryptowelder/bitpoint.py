@@ -1,7 +1,10 @@
+from datetime import timedelta
+from decimal import Decimal
 from threading import Thread
 from time import sleep
 
-from cryptowelder.context import CryptowelderContext, Ticker, Balance, AccountType, UnitType
+from cryptowelder.context import CryptowelderContext, Ticker, Balance, AccountType, UnitType, Transaction, \
+    TransactionType
 
 
 class BitpointWelder:
@@ -36,6 +39,7 @@ class BitpointWelder:
             threads = [
                 Thread(target=self._process_cash, args=(token,)),
                 Thread(target=self._process_coin, args=(token,)),
+                Thread(target=self._process_trade, args=(token,)),
             ]
 
             for t in threads:
@@ -236,6 +240,103 @@ class BitpointWelder:
             else:
 
                 self.__logger.warn('Coin Failure : %s - %s', type(e), e.args)
+
+    def _process_trade(self, token, *, retry=True):
+
+        if token is None:
+            return
+
+        try:
+
+            params = {
+                self._TOKEN: token
+            }
+
+            headers = {
+                'Content-Type': 'application/json'
+            }
+
+            path = self.__endpoint + '/bpj-api/vc_contract_refer_list'
+
+            for code in self.__context.get_property(self._ID, 'trade', 'BTC_JPY').split(','):
+
+                pair = code.split('_')
+
+                try:
+                    unit1 = UnitType[pair[0].upper()]
+                except KeyError:
+                    continue
+
+                try:
+                    unit2 = UnitType[pair[1].upper()]
+                except KeyError:
+                    continue
+
+                for period in self.__context.get_property(self._ID, 'period', '0,1').split(','):
+
+                    now = self.__context.get_now()
+
+                    json = {
+                        "currencyCd1": unit1.name,
+                        "currencyCd2": unit2.name,
+                        "buySellClsSearch": '0',  # 0: All, 1: Sell, 3: Buy
+                        "period": period,  # 0: Today, 1: Previous, 2: 1M, 3: 3M, 4: 6M, 5: 1Y
+                        "refTradeTypeCls": '3',  # 1: Margin Open, 2: Margin Close, 3: Cash
+                    }
+
+                    response = self.__context.requests_post(path, params=params, headers=headers, json=json)
+
+                    if response is None:
+                        continue
+
+                    if response.get('resultCode', self._FAILURE) != self._SUCCESS:
+                        raise Exception(response)
+
+                    values = []
+
+                    for execution in response.get('executionList', []):
+                        # 1: Margin Open, 2: Margin Close, 3: Cash
+                        acct = execution.get('refTradeTypeCls')
+                        acct = AccountType.CASH if acct == '3' else AccountType.MARGIN
+
+                        # 1: Sell, 3: Buy
+                        side = execution.get('buySellCls')
+                        side = +1 if side == '1' else -1 if side == '3' else 0
+
+                        # 'yyyyMMddHHmmss' (JST) -> 'yyyy-MM-ddTHH:mm:ss.SSS' (UTC)
+                        time = execution.get('executionDt')
+                        time = '%s-%s-%sT%s:%s:%s.000' % (
+                            time[0:4], time[4:6], time[6:8], time[8:10], time[10:12], time[12:14])
+                        time = self.__context.parse_iso_timestamp(time) - timedelta(hours=9)
+
+                        value = Transaction()
+                        value.tx_site = self._ID
+                        value.tx_code = code
+                        value.tx_type = TransactionType.TRADE
+                        value.tx_acct = acct
+                        value.tx_oid = str(execution.get('orderNo'))
+                        value.tx_eid = str(execution.get('executionNo'))
+                        value.tx_time = time
+                        value.tx_inst = -side * Decimal(execution.get('execNominal'))
+                        value.tx_fund = +side * Decimal(execution.get('execAmount'))
+
+                        values.append(value)
+
+                    self.__logger.debug('Transactions : %s - fetched=[%s] period=[%s]', code, len(values), period)
+
+                    self.__context.save_transactions(values)
+
+        except Exception as e:
+
+            if retry:
+
+                token = self._fetch_token(force=True)
+
+                self._process_trade(token, retry=False)
+
+            else:
+
+                self.__logger.warn('Transaction Failure : %s - %s', type(e), e.args)
 
 
 def main():
