@@ -826,6 +826,7 @@ class CryptowelderContext:
 
 
 class AccountType(Enum):
+    FUND = auto()
     CASH = auto()
     MARGIN = auto()
 
