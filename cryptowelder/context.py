@@ -489,6 +489,7 @@ class CryptowelderContext:
                 if t is None:
                     continue
 
+                # TODO: Optimize by querying in batches.
                 first = session.query(Transaction).filter(
                     Transaction.tx_site == t.tx_site,
                     Transaction.tx_code == t.tx_code,
