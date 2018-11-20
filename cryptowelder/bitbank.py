@@ -114,11 +114,6 @@ class BitbankWelder:
 
     def _process_transaction(self, pair):
 
-        if self.__context.get_property(self._ID, 'skip', True):
-            # Temporary out of service.
-            # TODO : Test and remove once available.
-            return
-
         try:
 
             headers = {
@@ -129,7 +124,7 @@ class BitbankWelder:
 
             while True:
 
-                response = self._query_private('/user/spot/trade_history?' + parse.urlencode(headers))
+                response = self._query_private('/v1/user/spot/trade_history?' + parse.urlencode(headers))
 
                 if response is None:
                     break
@@ -149,7 +144,7 @@ class BitbankWelder:
                     value.tx_acct = AccountType.CASH
                     value.tx_oid = str(trade.get('order_id'))
                     value.tx_eid = str(trade.get('trade_id'))
-                    value.tx_time = self.__context.parse_iso_timestamp(trade.get('executed_at'))
+                    value.tx_time = self.__context.parse_iso_timestamp(trade.get('executed_at') / 1000)
                     value.tx_inst = Decimal(trade.get('amount')) * self._SIDE[trade.get('side')]
                     value.tx_fund = Decimal(trade.get('price')) * value.tx_inst * -1
 
