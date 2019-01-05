@@ -31,7 +31,7 @@ class FiscoWelder:
 
         while not self.__context.is_closed():
 
-            codes = self.__context.get_property(self._ID, 'codes', 'btc_jpy,bch_btc,bch_jpy').split(',')
+            codes = self.__context.get_property(self._ID, 'codes', 'btc_jpy').split(',')
 
             threads = [
                 Thread(target=self._process_balance)

@@ -31,7 +31,7 @@ class ZaifWelder:
 
         while not self.__context.is_closed():
 
-            codes = self.__context.get_property(self._ID, 'codes', 'btc_jpy,bch_btc,eth_btc').split(',')
+            codes = self.__context.get_property(self._ID, 'codes', 'btc_jpy,eth_btc').split(',')
 
             threads = [
                 Thread(target=self._process_balance)

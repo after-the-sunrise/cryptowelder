@@ -36,7 +36,7 @@ class BtcboxWelder:
                 Thread(target=self._process_balance),
             ]
 
-            coins = self.__context.get_property(self._ID, 'coins', 'btc,bch,eth,ltc').split(',')
+            coins = self.__context.get_property(self._ID, 'coins', 'btc,eth').split(',')
 
             for coin in coins:
                 threads.append(Thread(target=self._process_ticker, args=(coin,)))

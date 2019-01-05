@@ -57,7 +57,7 @@ class QuoinexWelder:
 
             products = self.__context.requests_get(self.__endpoint + '/products')
 
-            codes = self.__context.get_property(self._ID, 'products', 'BTCJPY,BTCUSD').split(',')
+            codes = self.__context.get_property(self._ID, 'products', 'BTCJPY,ETHBTC').split(',')
 
             threads = []
 

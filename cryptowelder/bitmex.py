@@ -67,11 +67,11 @@ class BitmexWelder:
             values = []
 
             codes = self.__context.get_property(
-                self._ID, 'codes', '.BXBT'
+                self._ID, 'codes', '.BXBT,.BETH'
             ).split(',')
 
             references = self.__context.get_property(
-                self._ID, 'references', '.BXBT,.BXBT30M,.ETHXBT30M,.BCHXBT30M'
+                self._ID, 'references', '.BXBT,.BXBT30M,.BETH,.BETHXBT30M'
             ).split(',')
 
             for instrument in response:

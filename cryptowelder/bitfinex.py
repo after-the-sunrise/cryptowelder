@@ -27,7 +27,7 @@ class BitfinexWelder:
 
         while not self.__context.is_closed():
 
-            codes = self.__context.get_property(self._ID, 'codes', 'btcusd,bchbtc,ethbtc').split(',')
+            codes = self.__context.get_property(self._ID, 'codes', 'btcusd,ethbtc').split(',')
 
             threads = [Thread(target=self._process_ticker, args=(code,)) for code in codes]
 

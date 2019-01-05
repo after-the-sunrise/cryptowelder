@@ -69,9 +69,17 @@ class BitflyerWelder:
             threads = []
 
             codes = []
+            includes = [c for c in self.__context.get_property(self._ID, 'codes_include', '').split(',') if len(c) > 0]
+            excludes = [c for c in self.__context.get_property(self._ID, 'codes_exclude', '').split(',') if len(c) > 0]
 
             for market in markets if markets is not None else []:
                 code = market.get('product_code')
+
+                if len(includes) > 0 and code not in includes:
+                    continue
+
+                if len(excludes) > 0 and code in excludes:
+                    continue
 
                 codes.append(code)
 

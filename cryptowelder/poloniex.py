@@ -54,7 +54,7 @@ class PoloniexWelder:
 
             values = []
 
-            codes = self.__context.get_property(self._ID, 'codes', 'USDT_BTC,BTC_BCH,BTC_ETH').split(',')
+            codes = self.__context.get_property(self._ID, 'codes', 'USDT_BTC,BTC_ETH').split(',')
 
             for code in codes:
 

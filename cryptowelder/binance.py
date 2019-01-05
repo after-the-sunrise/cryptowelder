@@ -56,7 +56,7 @@ class BinanceWelder:
 
             values = []
 
-            codes = self.__context.get_property(self._ID, 'codes', 'BTCUSDT,ETHBTC,BCCBTC').split(',')
+            codes = self.__context.get_property(self._ID, 'codes', 'BTCUSDT,ETHBTC').split(',')
 
             for code in codes:
 

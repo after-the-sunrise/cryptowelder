@@ -39,7 +39,7 @@ class BitbankWelder:
             ]
 
             pairs = self.__context.get_property(
-                self._ID, 'pairs', 'btc_jpy,eth_btc,bcc_btc,bcc_jpy,ltc_btc'
+                self._ID, 'pairs', 'btc_jpy,eth_btc'
             ).split(',')
 
             for pair in pairs:
