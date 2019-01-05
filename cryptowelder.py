@@ -17,6 +17,7 @@ def main():
     cryptowelder.CoincheckWelder(context).run()
     cryptowelder.FiscoWelder(context).run()
     cryptowelder.OandaWelder(context).run()
+    cryptowelder.OkexWelder(context).run()
     cryptowelder.PoloniexWelder(context).run()
     cryptowelder.QuoinexWelder(context).run()
     cryptowelder.ZaifWelder(context).run()

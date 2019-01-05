@@ -10,6 +10,7 @@ from cryptowelder import context
 from cryptowelder import fisco
 from cryptowelder import metric
 from cryptowelder import oanda
+from cryptowelder import okex
 from cryptowelder import poloniex
 from cryptowelder import quoinex
 from cryptowelder import zaif
@@ -26,6 +27,7 @@ BtcboxWelder = btcbox.BtcboxWelder
 CoincheckWelder = coincheck.CoincheckWelder
 FiscoWelder = fisco.FiscoWelder
 OandaWelder = oanda.OandaWelder
+OkexWelder = okex.OkexWelder
 PoloniexWelder = poloniex.PoloniexWelder
 QuoinexWelder = quoinex.QuoinexWelder
 ZaifWelder = zaif.ZaifWelder
