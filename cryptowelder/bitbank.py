@@ -137,6 +137,11 @@ class BitbankWelder:
                 values = []
 
                 for trade in trades:
+                    amt_base = Decimal(trade.get('amount')) * self._SIDE[trade.get('side')]
+                    amt_quote = Decimal(trade.get('price')) * amt_base * -1
+                    fee_base = Decimal(trade.get('fee_amount_base', "0"))
+                    fee_quote = Decimal(trade.get('fee_amount_quote', "0"))
+
                     value = Transaction()
                     value.tx_site = self._ID
                     value.tx_code = pair
@@ -145,8 +150,8 @@ class BitbankWelder:
                     value.tx_oid = str(trade.get('order_id'))
                     value.tx_eid = str(trade.get('trade_id'))
                     value.tx_time = self.__context.parse_iso_timestamp(trade.get('executed_at') / 1000)
-                    value.tx_inst = Decimal(trade.get('amount')) * self._SIDE[trade.get('side')]
-                    value.tx_fund = Decimal(trade.get('price')) * value.tx_inst * -1
+                    value.tx_inst = amt_base - fee_base
+                    value.tx_fund = amt_quote - fee_quote
 
                     values.append(value)
 
