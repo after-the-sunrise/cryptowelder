@@ -21,7 +21,7 @@ class PoloniexWelder:
 
         self.__thread.join()
 
-    def _loop(self, *, default_interval=15):
+    def _loop(self, *, default_interval=20):
 
         self.__logger.info('Processing : %s', self.__endpoint)
 

@@ -34,7 +34,7 @@ class MetricWelder:
         self.__logger.info('Processing : %s', self._ID)
 
         threads = [
-            Thread(target=self._wrap, args=(self.process_metric, 30)),
+            Thread(target=self._wrap, args=(self.process_metric, 20)),
             Thread(target=self._wrap, args=(self.purge_metric, 3600)),
         ]
 
