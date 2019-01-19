@@ -16,7 +16,7 @@ class QuoinexWelder:
     def __init__(self, context):
         self.__context = context
         self.__logger = context.get_logger(self)
-        self.__endpoint = self.__context.get_property(self._ID, 'endpoint', 'https://api.quoine.com')
+        self.__endpoint = self.__context.get_property(self._ID, 'endpoint', 'https://api.liquid.com')
         self.__lock = Lock()
         self.__thread = Thread(daemon=False, target=self._loop)
 
