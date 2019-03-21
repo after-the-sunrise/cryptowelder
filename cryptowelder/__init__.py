@@ -8,6 +8,7 @@ from cryptowelder import btcbox
 from cryptowelder import coincheck
 from cryptowelder import context
 from cryptowelder import fisco
+from cryptowelder import huobijp
 from cryptowelder import metric
 from cryptowelder import oanda
 from cryptowelder import okex
@@ -26,6 +27,7 @@ BitpointWelder = bitpoint.BitpointWelder
 BtcboxWelder = btcbox.BtcboxWelder
 CoincheckWelder = coincheck.CoincheckWelder
 FiscoWelder = fisco.FiscoWelder
+HuobiJapanWelder = huobijp.HuobiJapanWelder
 OandaWelder = oanda.OandaWelder
 OkexWelder = okex.OkexWelder
 PoloniexWelder = poloniex.PoloniexWelder

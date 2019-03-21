@@ -16,6 +16,7 @@ def main():
     cryptowelder.BtcboxWelder(context).run()
     cryptowelder.CoincheckWelder(context).run()
     cryptowelder.FiscoWelder(context).run()
+    cryptowelder.HuobiJapanWelder(context).run()
     cryptowelder.OandaWelder(context).run()
     cryptowelder.OkexWelder(context).run()
     cryptowelder.PoloniexWelder(context).run()
