@@ -47,7 +47,7 @@ class HuobiJapanWelder:
 
             for symbol in symbols:
                 threads.append(Thread(target=self._process_ticker, args=(symbol,)))
-                # TODO threads.append(Thread(target=self._process_transaction, args=(symbol,)))
+                threads.append(Thread(target=self._process_transaction, args=(symbol,)))
 
             for t in threads:
                 t.start()
@@ -166,7 +166,7 @@ class HuobiJapanWelder:
 
             while True:
 
-                response = self._query_private('/v1/orders/matchresults', parameters=parameters)
+                response = self._query_private('/v1/order/matchresults', parameters=parameters)
 
                 if response is None or response.get('status') != 'ok' or 'data' not in response:
                     break
@@ -174,10 +174,10 @@ class HuobiJapanWelder:
                 values = []
 
                 for trade in response.get('data', []):
-                    side_flag = trade.get('type', 'n/a').split('=')[0].lower()
+                    side_flag = trade.get('type', 'n/a').split('-')[0].lower()
                     side_sign = self._SIDE.get(side_flag, self._ZERO)
 
-                    fee_base = Decimal(trade.get('filled-fees', "0"))
+                    fee_base = self._ZERO  # Decimal(trade.get('filled-fees', "0"))
                     amt_base = Decimal(trade.get('filled-amount')) * side_sign
                     amt_quote = Decimal(trade.get('price')) * amt_base * -1
 
@@ -202,7 +202,7 @@ class HuobiJapanWelder:
                 if len(results) <= 0:
                     break
 
-                parameters['from'] = min([t.get('id') for t in response.get('data', [])])
+                parameters['from'] = min([Decimal(t.get('id')) for t in response.get('data', [])])
 
         except Exception as e:
 
