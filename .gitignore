@@ -15,5 +15,6 @@ out
 
 # Runtime
 logs
+venv
 .python-version
 */__pycache__/
