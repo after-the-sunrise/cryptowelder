@@ -12,8 +12,9 @@ from os import path
 from re import compile
 from threading import Lock
 from time import sleep
+from urllib import parse
 
-from prometheus_client import Gauge, start_http_server
+from prometheus_client import Gauge, start_http_server, Counter
 from pytz import utc
 from requests import get, post, exceptions
 from sqlalchemy import create_engine, Column, String, DateTime, Numeric, Integer, Enum as Type, and_, or_, func, cast
@@ -64,6 +65,11 @@ class CryptowelderContext:
         # Cache
         self.__nonce_lock = defaultdict(lambda: Lock())
         self.__nonce_time = {}
+
+        # Metrics
+        self.__request_counter = Counter('cryptowelder_requests_total',
+                                         'Total number of HTTP requests.',
+                                         ['method', 'url_host', 'url_path', 'status'])
 
     def _create_config(self, paths):
 
@@ -164,7 +170,7 @@ class CryptowelderContext:
 
         return loads(json, parse_float=Decimal)
 
-    def _request(self, method, *, label='N/A'):
+    def _request(self, method, *, label='N/A', counter=None):
 
         attempt = int(self.get_property(self._SECTION, "request_retry", 2)) + 1
 
@@ -177,6 +183,9 @@ class CryptowelderContext:
             try:
 
                 with method() as r:
+
+                    if counter:
+                        counter(r.status_code)
 
                     if r.ok:
                         return self._parse(r.text)
@@ -193,23 +202,40 @@ class CryptowelderContext:
 
             except exceptions.RequestException as e:
 
+                if counter:
+                    counter(0)
+
                 self.__logger.debug('[%s][%s/%s] %s', type(e).__name__, count, attempt, label)
 
                 raise Exception(label) from e
 
             sleep(float(self.get_property(self._SECTION, "request_sleep", 3.0)))
 
+    def counter_lambda(self, url, method):
+
+        parsed = parse.urlparse(url)
+
+        h = parsed.netloc
+
+        p = parsed.path
+
+        return lambda code: self.__request_counter.labels(method=method, url_host=h, url_path=p, status=code).inc()
+
     def requests_get(self, url, params=None, **kwargs):
 
         kwargs.setdefault('timeout', int(self.get_property(self._SECTION, "request_timeout", 60)))
 
-        return self._request(lambda: get(url, params=params, **kwargs), label=url)
+        counter = self.counter_lambda(url, 'GET')
+
+        return self._request(lambda: get(url, params=params, **kwargs), label=url, counter=counter)
 
     def requests_post(self, url, data=None, json=None, **kwargs):
 
         kwargs.setdefault('timeout', int(self.get_property(self._SECTION, "request_timeout", 60)))
 
-        return self._request(lambda: post(url, data=data, json=json, **kwargs), label=url)
+        counter = self.counter_lambda(url, 'POST')
+
+        return self._request(lambda: post(url, data=data, json=json, **kwargs), label=url, counter=counter)
 
     def _truncate_datetime(self, source):
 
@@ -534,7 +560,7 @@ class CryptowelderContext:
         return candidates.keys()
 
     def save_metrics(self, metrics, *,
-                     gauge=Gauge('metric', 'Saved metric values', ('type', 'name'))
+                     gauge=Gauge('cryptowelder_metrics', 'Saved metrics values', ('type', 'name'))
                      ):
 
         merged = []
