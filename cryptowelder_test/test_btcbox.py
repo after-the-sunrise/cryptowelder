@@ -27,6 +27,8 @@ class TestBtcboxWelder(TestCase):
         self.context.is_closed.assert_called_once()
 
     def test___loop(self):
+        self.context.get_property = MagicMock(
+            side_effect=lambda section, key, default_value: 'a,b,c,d' if key == 'coins' else default_value)
         self.context.is_closed = MagicMock(side_effect=(False, False, True))
         self.target._process_ticker = MagicMock()
         self.target._process_balance = MagicMock()

@@ -152,7 +152,7 @@ class TestQuoinexWelder(TestCase):
 
         self.context.get_property = MagicMock(side_effect=['foo', 'bar'])
         self.assertEqual('json', self.target._query_private('/some_path'))
-        self.assertEqual('https://api.quoine.com/some_path', self.context.requests_get.call_args[0][0])
+        self.assertEqual('https://api.liquid.com/some_path', self.context.requests_get.call_args[0][0])
         headers = self.context.requests_get.call_args[1]['headers']
         self.assertEqual(3, len(headers))
         self.assertEqual('application/json', headers['Content-Type'])

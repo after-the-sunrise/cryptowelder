@@ -28,7 +28,7 @@ class TestMetricWelder(TestCase):
         calls = self.target._wrap.call_args_list
         self.assertEqual(self.target.process_metric, calls[0][0][0])
         self.assertEqual(self.target.purge_metric, calls[1][0][0])
-        self.assertEqual(30, calls[0][0][1])
+        self.assertEqual(20, calls[0][0][1])
         self.assertEqual(3600, calls[1][0][1])
 
     def test__wrap(self):

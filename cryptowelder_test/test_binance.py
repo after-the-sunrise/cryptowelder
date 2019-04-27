@@ -35,6 +35,7 @@ class TestPoloniexWelder(TestCase):
     def test__process_ticker(self):
         now = datetime.fromtimestamp(1234567890.123456, utc)
         self.context.get_now = MagicMock(return_value=now)
+        self.context.get_property = MagicMock(return_value='BTCUSDT,ETHBTC,BCCBTC,FOOBAR')
         self.context.save_tickers = MagicMock()
         self.context.requests_get = MagicMock(side_effect=[
             CryptowelderContext._parse("""
@@ -83,7 +84,7 @@ class TestPoloniexWelder(TestCase):
         self.target._process_ticker()
 
         tickers = self.context.save_tickers.call_args[0][0]
-        self.assertEqual(3, len(tickers))
+        self.assertEqual(4, len(tickers))
 
         for t in tickers:
             self.assertEqual('binance', t.tk_site)
@@ -101,6 +102,10 @@ class TestPoloniexWelder(TestCase):
         self.assertEqual('0.09990500', tickers[2].tk_ask)
         self.assertEqual('0.09977100', tickers[2].tk_bid)
         self.assertEqual('0.09989100', tickers[2].tk_ltp)
+        self.assertEqual('FOOBAR', tickers[3].tk_code)
+        self.assertEqual(None, tickers[3].tk_ask)
+        self.assertEqual(None, tickers[3].tk_bid)
+        self.assertEqual(None, tickers[3].tk_ltp)
 
         # Query Empty
         self.context.requests_get.reset_mock()

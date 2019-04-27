@@ -58,18 +58,17 @@ class PoloniexWelder:
 
             for code in codes:
 
-                value = response.get(code)
-
-                if value is None:
-                    continue
-
                 ticker = Ticker()
                 ticker.tk_site = self._ID
                 ticker.tk_code = code
                 ticker.tk_time = now
-                ticker.tk_ask = value.get('lowestAsk')
-                ticker.tk_bid = value.get('highestBid')
-                ticker.tk_ltp = value.get('last')
+
+                value = response.get(code)
+
+                if value is not None:
+                    ticker.tk_ask = value.get('lowestAsk')
+                    ticker.tk_bid = value.get('highestBid')
+                    ticker.tk_ltp = value.get('last')
 
                 values.append(ticker)
 

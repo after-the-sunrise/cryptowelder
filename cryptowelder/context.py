@@ -66,11 +66,6 @@ class CryptowelderContext:
         self.__nonce_lock = defaultdict(lambda: Lock())
         self.__nonce_time = {}
 
-        # Metrics
-        self.__request_counter = Counter('cryptowelder_requests_total',
-                                         'Total number of HTTP requests.',
-                                         ['method', 'url_host', 'url_path', 'status'])
-
     def _create_config(self, paths):
 
         config = ConfigParser()
@@ -211,15 +206,15 @@ class CryptowelderContext:
 
             sleep(float(self.get_property(self._SECTION, "request_sleep", 3.0)))
 
-    def counter_lambda(self, url, method):
+    def counter_lambda(self, url, method, *, counter=Counter('cryptowelder_requests_total',
+                                                             'Total number of HTTP requests.',
+                                                             ['method', 'url_host', 'url_path', 'status'])):
 
         parsed = parse.urlparse(url)
 
-        h = parsed.netloc
-
-        p = parsed.path
-
-        return lambda code: self.__request_counter.labels(method=method, url_host=h, url_path=p, status=code).inc()
+        return lambda code: counter.labels(
+            method=method, url_host=parsed.netloc, url_path=parsed.path, status=code
+        ).inc()
 
     def requests_get(self, url, params=None, **kwargs):
 
