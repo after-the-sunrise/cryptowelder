@@ -360,20 +360,20 @@ class MetricWelder:
 
     def purge_metric(self, *, intervals=(
 
-            # [0] Older than 5+ years, delete all.
-            (1984, tuple()),
+            # [0] Older than 7+ years, delete all.
+            (24 * 365 * 8, tuple()),
 
-            # [1] Older than 1+ month, hourly interval.
-            (42, tuple([0])),
+            # [1] Older than 48 hours, hourly interval.
+            (48, tuple([0])),
 
-            # [2] Older than 1 week, 30 minutes interval.
-            (7, tuple(i * 30 for i in range(0, 2))),
+            # [2] Older than 36 hours, 30 minutes interval.
+            (36, tuple(i * 30 for i in range(0, 2))),
 
-            # [3] Older than 2 days, 15 minutes interval.
-            (2, tuple(i * 15 for i in range(0, 4))),
+            # [3] Older than 24 hours, 15 minutes interval.
+            (24, tuple(i * 15 for i in range(0, 4))),
 
-            # [4] Older than 1 day, 5 minutes interval.
-            (1, tuple(i * 5 for i in range(0, 12))),
+            # [4] Older than 12 hours, 5 minutes interval.
+            (12, tuple(i * 5 for i in range(0, 12))),
 
     )):
 
@@ -381,12 +381,12 @@ class MetricWelder:
 
         for idx, entry in enumerate(intervals):
 
-            days = self.__context.get_property(self._ID, 'purge_%s' % idx, entry[0])
+            hours = self.__context.get_property(self._ID, 'purge_%s' % idx, entry[0])
 
-            if days is None:
+            if hours is None:
                 continue
 
-            cutoff = now - timedelta(days=max(int(days), 1))
+            cutoff = now - timedelta(hours=max(int(hours), 1))
 
             count = self.__context.delete_metrics(cutoff, exclude_minutes=entry[1])
 
