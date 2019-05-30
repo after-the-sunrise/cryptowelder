@@ -18,3 +18,4 @@ logs
 venv
 .python-version
 */__pycache__/
+cryptowelder.properties
