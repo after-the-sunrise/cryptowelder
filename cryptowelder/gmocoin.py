@@ -1,14 +1,19 @@
 from datetime import timedelta
+from decimal import Decimal
 from hashlib import sha256
 from hmac import new
 from threading import Thread, Lock
 from time import sleep
+from urllib.parse import urlencode
 
-from cryptowelder.context import CryptowelderContext, Ticker
+from cryptowelder.context import CryptowelderContext, Ticker, Balance, AccountType, UnitType, Transaction, \
+    TransactionType
 
 
 class GmoCoinWelder:
     _ID = 'gmocoin'
+    _ZERO = Decimal('0')
+    _SIDE = {'BUY': Decimal('+1'), 'SELL': Decimal('-1')}
 
     def __init__(self, context):
         self.__context = context
@@ -31,10 +36,10 @@ class GmoCoinWelder:
 
         while not self.__context.is_closed():
 
-            codes = self.__context.get_property(self._ID, 'codes', 'BTC_JPY,ETH_JPY').split(',')
+            codes = self.__context.get_property(self._ID, 'codes', 'BTC,ETH').split(',')
 
             threads = [
-                Thread(target=self._process_balance)
+                Thread(target=self._process_assets),
             ]
 
             for code in codes:
@@ -56,11 +61,11 @@ class GmoCoinWelder:
         try:
 
             with self.__lock:
-                now = self.__context.get_nonce(self._ID, delta=timedelta(seconds=1)).timestamp()
+                now = self.__context.get_nonce(self._ID, delta=timedelta(seconds=2)).timestamp()
                 response = self.__context.requests_get(self.__endpoint + '/public/v1/ticker?symbol=' + code);
 
             if response is None or response.get('status', None) != 0 or not isinstance(response.get('data'), list):
-                return
+                raise Exception(str(response))
 
             for data in response.get('data'):
 
@@ -82,7 +87,7 @@ class GmoCoinWelder:
 
             self.__logger.warn('Ticker Failure - %s : %s - %s', code, type(e), e.args)
 
-    def _query_private(self, path, *, parameters={}, body=''):
+    def _query_private(self, path, *, query='', body=''):
 
         apikey = self.__context.get_property(self._ID, 'apikey', None)
         secret = self.__context.get_property(self._ID, 'secret', None)
@@ -91,17 +96,11 @@ class GmoCoinWelder:
             return None
 
         with self.__lock:
+            time = str(int(self.__context.get_nonce(self._ID, delta=timedelta(seconds=2)).timestamp() * 1000))
 
-            time = self.__context.get_nonce(self._ID, delta=timedelta(seconds=1)).timestamp()
+            payload = ''.join([time, 'GET', path, body])
 
-            params = ''
-
-            for k, v in parameters.items():
-                params = params + ('&%s=%s' % (k, v))
-
-            full_path = path + '?' + params if len(params) > 0 else path
-
-            digest = new(secret.encode(), ''.join([str(time), 'GET', full_path, body]).encode(), sha256).hexdigest()
+            digest = new(secret.encode(), payload.encode(), sha256).hexdigest()
 
             headers = {
                 "API-KEY": apikey,
@@ -109,13 +108,96 @@ class GmoCoinWelder:
                 "API-SIGN": digest
             }
 
-            return self.__context.requests_get(self.__endpoint + '/private' + full_path, headers=headers, data=body)
+            return self.__context.requests_get(self.__endpoint + '/private' + path + query, headers=headers, data=body)
 
-    def _process_balance(self):
-        pass  # TODO
+    def _process_assets(self):
 
-    def _process_trades(self, code, *, count=100):
-        pass  # TODO
+        try:
+
+            now = self.__context.get_now()
+
+            response = self._query_private('/v1/account/assets')
+
+            if response is None or response.get('status', None) != 0 or not isinstance(response.get('data'), list):
+                raise Exception(str(response))
+
+            values = []
+
+            for asset in response.get('data'):
+
+                try:
+                    unit = UnitType[asset.get('symbol', '').upper()]
+                except KeyError:
+                    continue
+
+                value = Balance()
+                value.bc_site = self._ID
+                value.bc_acct = AccountType.CASH
+                value.bc_unit = unit
+                value.bc_time = now
+                value.bc_amnt = asset.get('amount')
+
+                values.append(value)
+
+            self.__context.save_balances(values)
+
+            for value in values:
+                self.__logger.debug('Asset : %s', value)
+
+        except Exception as e:
+
+            self.__logger.warn('Assets Failure : %s - %s', type(e), e.args)
+
+    def _process_trades(self, code, *, count=100, page=1):
+
+        try:
+
+            params = {
+                'symbol': code,
+                'count': count,
+                'page': page
+            }
+
+            while True:
+
+                response = self._query_private('/v1/latestExecutions', query='?' + urlencode(params));
+
+                if response is None or response.get('status', None) != 0 or not isinstance(response.get('data'), dict):
+                    raise Exception(str(response))
+
+                values = []
+
+                for execution in response.get('data').get('list', []):
+                    sign = self._SIDE.get(execution.get('side'), self._ZERO)
+                    prce = Decimal(execution.get('price', '0'))
+                    size = Decimal(execution.get('size', '0'))
+                    comm = Decimal(execution.get('fee', '0'))
+
+                    value = Transaction()
+                    value.tx_site = self._ID
+                    value.tx_code = execution.get('symbol')
+                    value.tx_type = TransactionType.TRADE
+                    value.tx_acct = AccountType.CASH if '_' not in code else AccountType.MARGIN
+                    value.tx_oid = str(execution.get('orderId'))
+                    value.tx_eid = str(execution.get('executionId'))
+                    value.tx_time = self.__context.parse_iso_timestamp(execution.get('timestamp'))
+                    value.tx_inst = size * +sign
+                    value.tx_fund = size * -sign * prce - comm
+
+                    values.append(value)
+
+                self.__logger.debug('Transactions : %s - fetched=[%s] page=[%s]', code, len(values), params['page'])
+
+                results = self.__context.save_transactions(values)
+
+                if len(results) <= 0:
+                    break
+
+                params['page'] = params['page'] + 1
+
+        except Exception as e:
+
+            self.__logger.warn('Transaction Failure : %s - %s - %s', code, type(e), e.args)
 
 
 def main():
