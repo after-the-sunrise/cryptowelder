@@ -220,6 +220,8 @@ class CryptowelderContext:
 
         kwargs.setdefault('timeout', int(self.get_property(self._SECTION, "request_timeout", 60)))
 
+        kwargs.setdefault('proxies', self._fetch_proxies())
+
         counter = self.counter_lambda(url, 'GET')
 
         return self._request(lambda: get(url, params=params, **kwargs), label=url, counter=counter)
@@ -228,9 +230,20 @@ class CryptowelderContext:
 
         kwargs.setdefault('timeout', int(self.get_property(self._SECTION, "request_timeout", 60)))
 
+        kwargs.setdefault('proxies', self._fetch_proxies())
+
         counter = self.counter_lambda(url, 'POST')
 
         return self._request(lambda: post(url, data=data, json=json, **kwargs), label=url, counter=counter)
+
+    def _fetch_proxies(self):
+
+        proxies = {
+            'http': self.get_property(self._SECTION, "request_proxy_http", None),
+            'https': self.get_property(self._SECTION, "request_proxy_https", None)
+        }
+
+        return {k: v for k, v in proxies.items() if v is not None and len(v) > 0}
 
     def _truncate_datetime(self, source):
 
