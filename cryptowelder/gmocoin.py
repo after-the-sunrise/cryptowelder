@@ -61,11 +61,13 @@ class GmoCoinWelder:
         try:
 
             with self.__lock:
-                now = self.__context.get_nonce(self._ID, delta=timedelta(seconds=2)).timestamp()
+                now = self.__context.get_nonce(self._ID, delta=timedelta(seconds=2))
                 response = self.__context.requests_get(self.__endpoint + '/public/v1/ticker?symbol=' + code);
 
             if response is None or response.get('status', None) != 0 or not isinstance(response.get('data'), list):
                 raise Exception(str(response))
+
+            values = []
 
             for data in response.get('data'):
 
@@ -80,8 +82,11 @@ class GmoCoinWelder:
                 ticker.tk_bid = data.get('bid')
                 ticker.tk_ltp = data.get('last')
 
-                self.__context.save_tickers([ticker])
+                values.append(ticker)
+
                 self.__logger.debug('Ticker : %s - %s', code, ticker)
+
+            self.__context.save_tickers(values)
 
         except Exception as e:
 
