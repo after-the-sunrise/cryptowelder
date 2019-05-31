@@ -43,7 +43,7 @@ class HuobiJapanWelder:
             for account in accounts:
                 threads.append(Thread(target=self._process_balance, args=(account,)))
 
-            symbols = self.__context.get_property(self._ID, 'symbols', 'btcjpy').split(',')
+            symbols = self.__context.get_property(self._ID, 'symbols', 'btcjpy,ethbtc').split(',')
 
             for symbol in symbols:
                 threads.append(Thread(target=self._process_ticker, args=(symbol,)))
