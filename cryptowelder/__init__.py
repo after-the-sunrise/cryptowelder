@@ -10,6 +10,7 @@ from cryptowelder import context
 from cryptowelder import fisco
 from cryptowelder import gmocoin
 from cryptowelder import huobijp
+from cryptowelder import kucoin
 from cryptowelder import metric
 from cryptowelder import oanda
 from cryptowelder import okex
@@ -30,6 +31,7 @@ CoincheckWelder = coincheck.CoincheckWelder
 FiscoWelder = fisco.FiscoWelder
 GmoCoinWelder = gmocoin.GmoCoinWelder
 HuobiJapanWelder = huobijp.HuobiJapanWelder
+KucoinWelder = kucoin.KucoinWelder
 OandaWelder = oanda.OandaWelder
 OkexWelder = okex.OkexWelder
 PoloniexWelder = poloniex.PoloniexWelder

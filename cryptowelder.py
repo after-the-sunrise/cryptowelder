@@ -18,6 +18,7 @@ def main():
     cryptowelder.FiscoWelder(context).run()
     cryptowelder.GmoCoinWelder(context).run()
     cryptowelder.HuobiJapanWelder(context).run()
+    cryptowelder.KucoinWelder(context).run()
     cryptowelder.OandaWelder(context).run()
     cryptowelder.OkexWelder(context).run()
     cryptowelder.PoloniexWelder(context).run()
